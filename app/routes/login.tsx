@@ -30,14 +30,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
-  const username = String(form.get("username") ?? "").trim();
+  const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
 
-  if (!username || !password) {
+  if (!email || !password) {
     return { error: "All fields are required" };
   }
 
-  const result = await loginUser(username, password);
+  const result = await loginUser(email, password);
   if (!result.success) {
     return { error: result.error };
   }
@@ -66,12 +66,12 @@ export default function Login() {
               <p className="text-sm text-destructive">{actionData.error}</p>
             )}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
               />
             </div>

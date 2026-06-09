@@ -93,12 +93,12 @@ export async function createSession(userId: number): Promise<string> {
 
 export async function getSessionUser(
   request: Request,
-): Promise<{ id: number; username: string; email: string } | null> {
+): Promise<{ id: number; email: string } | null> {
   const token = getSessionToken(request);
   if (!token) return null;
   const db = getDb();
   const result = await db
-    .select({ id: users.id, username: users.username, email: users.email })
+    .select({ id: users.id, email: users.email })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
     .where(and(eq(sessions.id, token), gt(sessions.expiresAt, new Date())))
@@ -120,29 +120,21 @@ type RegisterResult =
   | { success: false; error: string };
 
 export async function registerUser(
-  username: string,
   email: string,
   password: string,
 ): Promise<RegisterResult> {
   const db = getDb();
-  const existingUsername = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.username, username))
-    .get();
-  if (existingUsername) return { success: false, error: "Username already taken" };
-
-  const existingEmail = await db
+  const existing = await db
     .select({ id: users.id })
     .from(users)
     .where(eq(users.email, email))
     .get();
-  if (existingEmail) return { success: false, error: "Email already registered" };
+  if (existing) return { success: false, error: "Email already registered" };
 
   const passwordHash = await hashPassword(password);
   const [row] = await db
     .insert(users)
-    .values({ username, email, passwordHash })
+    .values({ email, passwordHash })
     .returning({ id: users.id });
   return { success: true, userId: row.id };
 }
@@ -152,19 +144,19 @@ type LoginResult =
   | { success: false; error: string };
 
 export async function loginUser(
-  username: string,
+  email: string,
   password: string,
 ): Promise<LoginResult> {
   const db = getDb();
   const user = await db
     .select({ id: users.id, passwordHash: users.passwordHash })
     .from(users)
-    .where(eq(users.username, username))
+    .where(eq(users.email, email))
     .get();
-  if (!user) return { success: false, error: "Invalid username or password" };
+  if (!user) return { success: false, error: "Invalid email or password" };
 
   const valid = await verifyPassword(password, user.passwordHash);
-  if (!valid) return { success: false, error: "Invalid username or password" };
+  if (!valid) return { success: false, error: "Invalid email or password" };
 
   return { success: true, userId: user.id };
 }

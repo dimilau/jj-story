@@ -30,12 +30,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
-  const username = String(form.get("username") ?? "").trim();
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const confirmPassword = String(form.get("confirmPassword") ?? "");
 
-  if (!username || !email || !password || !confirmPassword) {
+  if (!email || !password || !confirmPassword) {
     return { error: "All fields are required" };
   }
   if (password !== confirmPassword) {
@@ -45,7 +44,7 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: "Password must be at least 8 characters" };
   }
 
-  const result = await registerUser(username, email, password);
+  const result = await registerUser(email, password);
   if (!result.success) {
     return { error: result.error };
   }
@@ -73,16 +72,6 @@ export default function Register() {
             {actionData?.error && (
               <p className="text-sm text-destructive">{actionData.error}</p>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                required
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

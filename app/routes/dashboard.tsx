@@ -32,10 +32,6 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Username</p>
-            <p className="text-sm text-muted-foreground">{user.username}</p>
-          </div>
-          <div className="space-y-1">
             <p className="text-sm font-medium">Email</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
