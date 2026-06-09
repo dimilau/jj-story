@@ -93,12 +93,12 @@ export async function createSession(userId: number): Promise<string> {
 
 export async function getSessionUser(
   request: Request,
-): Promise<{ id: number; email: string } | null> {
+): Promise<{ id: number; email: string; role: string } | null> {
   const token = getSessionToken(request);
   if (!token) return null;
   const db = getDb();
   const result = await db
-    .select({ id: users.id, email: users.email })
+    .select({ id: users.id, email: users.email, role: users.role })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
     .where(and(eq(sessions.id, token), gt(sessions.expiresAt, new Date())))

@@ -125,12 +125,13 @@ export default function Login() {
                 <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
-            <Button type="button" variant="outline" className="w-full" asChild>
-              <a href="/auth/google" className="flex items-center gap-2">
-                <GoogleIcon />
-                Sign in with Google
-              </a>
-            </Button>
+            <a
+              href="/auth/google"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <GoogleIcon />
+              Sign in with Google
+            </a>
             <p className="text-sm text-muted-foreground text-center">
               Don&apos;t have an account?{" "}
               <Link to="/register" className="underline underline-offset-4 hover:text-primary">

@@ -74,6 +74,40 @@ npx wrangler versions deploy
 
 This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
+## Admin Panel
+
+### Creating the First Admin User
+
+To create an admin user, use the Wrangler D1 CLI to execute a SQL update statement on your database.
+
+First, find the ID of the user you want to promote to admin. Then run:
+
+```bash
+wrangler d1 execute <database-name> --remote --file -
+```
+
+And paste the following SQL statement:
+
+```sql
+UPDATE users SET role = 'admin' WHERE id = <user-id>;
+```
+
+Replace `<user-id>` with the actual user ID (e.g., `UPDATE users SET role = 'admin' WHERE id = 1;`).
+
+Alternatively, to promote a user by email:
+
+```bash
+wrangler d1 execute <database-name> --remote --file -
+```
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'user@example.com';
+```
+
+After promoting a user to admin, they will have access to:
+- `/admin/dashboard` - Admin dashboard
+- `/admin/users` - User management interface where admins can view and edit user roles
+
 ---
 
 Built with ❤️ using React Router.
