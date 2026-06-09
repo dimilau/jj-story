@@ -22,8 +22,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Manage Users" }];
@@ -112,15 +118,30 @@ function UserDialog({
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">Role</Label>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-md border border-border hover:bg-muted/50 cursor-pointer">
-                <span className="text-sm">Admin</span>
-                <Switch
-                  checked={role === "admin"}
-                  onCheckedChange={(checked) => setRole(checked ? "admin" : "user")}
-                />
-              </div>
-            </div>
+            <Select
+              items={[
+                { label: "User", value: "user" },
+                { label: "Admin", value: "admin" },
+              ]}
+              value={role}
+              onValueChange={(value) => {
+                if (value) setRole(value as "user" | "admin");
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  { label: "User", value: "user" },
+                  { label: "Admin", value: "admin" },
+                ].map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
