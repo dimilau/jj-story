@@ -31,7 +31,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
           <h1 className="text-xl font-bold">Jumping Joy Story</h1>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           <Link
             to="/admin/dashboard"
             className="block px-4 py-2 rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -45,40 +45,38 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
             Users
           </Link>
         </nav>
+
+        <div className="relative" ref={dropdownRef}>
+          <Button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            variant="ghost"
+            className="w-full justify-start gap-2"
+            title={userEmail}
+          >
+            <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-xs flex-shrink-0">
+              {userEmail[0].toUpperCase()}
+            </div>
+            <span className="truncate text-sm">{userEmail}</span>
+          </Button>
+
+          {dropdownOpen && (
+            <div className="absolute left-0 bottom-full mb-2 w-48 rounded-md border border-border bg-card shadow-md z-50">
+              <Form method="post" action="/logout" className="w-full">
+                <button
+                  type="submit"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent rounded-md text-left"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </Form>
+            </div>
+          )}
+        </div>
       </aside>
 
-      <main className="flex-1 flex flex-col">
-        <header className="border-b border-border bg-card px-8 py-4 flex justify-end items-center">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="p-2 rounded-full hover:bg-accent transition-colors"
-              title={userEmail}
-            >
-              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
-                {userEmail[0].toUpperCase()}
-              </div>
-            </button>
-
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-card shadow-md z-50">
-                <Form method="post" action="/logout" className="w-full">
-                  <button
-                    type="submit"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent rounded-md text-left"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </Form>
-              </div>
-            )}
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-auto p-8">
-          {children}
-        </div>
+      <main className="flex-1 overflow-auto p-8">
+        {children}
       </main>
     </div>
   );
