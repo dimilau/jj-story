@@ -8,7 +8,9 @@
 	"compatibility_date": "2026-06-09",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+		"GOOGLE_CLIENT_ID": "",
+		"GOOGLE_REDIRECT_URI": ""
 	},
 	"observability": {
 		"enabled": true

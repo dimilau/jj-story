@@ -153,10 +153,44 @@ export async function loginUser(
     .from(users)
     .where(eq(users.email, email))
     .get();
-  if (!user) return { success: false, error: "Invalid email or password" };
+  if (!user || !user.passwordHash) return { success: false, error: "Invalid email or password" };
 
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) return { success: false, error: "Invalid email or password" };
 
   return { success: true, userId: user.id };
+}
+
+type GoogleUserResult =
+  | { success: true; userId: number }
+  | { success: false; error: string };
+
+export async function findOrCreateGoogleUser(
+  googleId: string,
+  email: string,
+): Promise<GoogleUserResult> {
+  const db = getDb();
+
+  const existing = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.googleId, googleId))
+    .get();
+  if (existing) return { success: true, userId: existing.id };
+
+  const byEmail = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email))
+    .get();
+  if (byEmail) {
+    await db.update(users).set({ googleId }).where(eq(users.id, byEmail.id));
+    return { success: true, userId: byEmail.id };
+  }
+
+  const [row] = await db
+    .insert(users)
+    .values({ email, googleId })
+    .returning({ id: users.id });
+  return { success: true, userId: row.id };
 }

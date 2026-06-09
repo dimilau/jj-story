@@ -6,4 +6,6 @@ export default [
   route("register", "routes/register.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
   route("logout", "routes/logout.tsx"),
+  route("auth/google", "routes/auth.google.tsx"),
+  route("auth/google/callback", "routes/auth.google.callback.tsx"),
 ] satisfies RouteConfig;
