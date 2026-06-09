@@ -16,6 +16,14 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "jumping-joy-story",
+			"database_id": "3a86b98c-d002-4e3f-bec1-ade6887f11ae",
+			"migrations_dir": "migrations"
+		}
 	]
 	/**
 	 * Smart Placement
