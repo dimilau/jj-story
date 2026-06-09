@@ -5,7 +5,7 @@ import { getDb } from "../db/index.server";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import AdminLayout from "../components/admin-layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -79,6 +79,12 @@ function UserDialog({
 }) {
   const [role, setRole] = useState<string>(user?.role || "user");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setRole(user.role);
+    }
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
