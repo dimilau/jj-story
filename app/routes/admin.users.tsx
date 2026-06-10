@@ -52,7 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (request.method === "POST") {
     const formData = await request.formData();
-    const userId = parseInt(formData.get("userId") as string);
+    const userId = formData.get("userId") as string;
     const role = formData.get("role") as "user" | "admin";
 
     if (!userId || !role) {
@@ -90,7 +90,7 @@ function UserDialog({
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData();
-    formData.append("userId", user!.id.toString());
+    formData.append("userId", user!.id);
     formData.append("role", role);
 
     const response = await fetch("", {

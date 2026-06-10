@@ -10,4 +10,7 @@ export default [
   route("auth/google/callback", "routes/auth.google.callback.tsx"),
   route("admin/dashboard", "routes/admin.dashboard.tsx"),
   route("admin/users", "routes/admin.users.tsx"),
+  route("admin/stories", "routes/admin.stories.tsx"),
+  route("admin/stories/new", "routes/admin.stories.new.tsx"),
+  route("admin/stories/:id/edit", "routes/admin.stories.$id.edit.tsx"),
 ] satisfies RouteConfig;

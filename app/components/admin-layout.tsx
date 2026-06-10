@@ -44,6 +44,12 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
           >
             Users
           </Link>
+          <Link
+            to="/admin/stories"
+            className="block px-4 py-2 rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            Stories
+          </Link>
         </nav>
 
         <div className="relative" ref={dropdownRef}>

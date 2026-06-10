@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash"),
   googleId: text("google_id").unique(),
@@ -13,7 +13,7 @@ export const users = sqliteTable("users", {
 
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
-  userId: integer("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
@@ -22,5 +22,21 @@ export const sessions = sqliteTable("sessions", {
     .$defaultFn(() => new Date()),
 });
 
+export const stories = sqliteTable("stories", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull().default(""),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
+export type Story = typeof stories.$inferSelect;

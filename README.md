@@ -105,7 +105,7 @@ UPDATE users SET role = 'admin' WHERE email = 'user@gmail.com';
 ```
 
 ```bash
-wrangler d1 execute <database-name> --remote --command "UPDATE users SET role = 'admin' WHERE email = 'user@gmail.com';"
+wrangler d1 execute <database-name> --local --command "UPDATE users SET role = 'admin' WHERE email = 'user@gmail.com';"
 
 After promoting a user to admin, they will have access to:
 - `/admin/dashboard` - Admin dashboard

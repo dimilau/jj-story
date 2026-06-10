@@ -81,7 +81,7 @@ function getSessionToken(request: Request): string | null {
 
 // ── Session DB helpers ────────────────────────────────────────────────────────
 
-export async function createSession(userId: number): Promise<string> {
+export async function createSession(userId: string): Promise<string> {
   const db = getDb();
   const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -93,7 +93,7 @@ export async function createSession(userId: number): Promise<string> {
 
 export async function getSessionUser(
   request: Request,
-): Promise<{ id: number; email: string; role: string } | null> {
+): Promise<{ id: string; email: string; role: string } | null> {
   const token = getSessionToken(request);
   if (!token) return null;
   const db = getDb();
@@ -116,7 +116,7 @@ export async function deleteSession(request: Request): Promise<void> {
 // ── Business logic ────────────────────────────────────────────────────────────
 
 type RegisterResult =
-  | { success: true; userId: number }
+  | { success: true; userId: string }
   | { success: false; error: string };
 
 export async function registerUser(
@@ -132,15 +132,16 @@ export async function registerUser(
   if (existing) return { success: false, error: "Email already registered" };
 
   const passwordHash = await hashPassword(password);
+  const userId = crypto.randomUUID();
   const [row] = await db
     .insert(users)
-    .values({ email, passwordHash })
+    .values({ id: userId, email, passwordHash })
     .returning({ id: users.id });
   return { success: true, userId: row.id };
 }
 
 type LoginResult =
-  | { success: true; userId: number }
+  | { success: true; userId: string }
   | { success: false; error: string };
 
 export async function loginUser(
@@ -162,7 +163,7 @@ export async function loginUser(
 }
 
 type GoogleUserResult =
-  | { success: true; userId: number }
+  | { success: true; userId: string }
   | { success: false; error: string };
 
 export async function findOrCreateGoogleUser(
@@ -188,9 +189,10 @@ export async function findOrCreateGoogleUser(
     return { success: true, userId: byEmail.id };
   }
 
+  const userId = crypto.randomUUID();
   const [row] = await db
     .insert(users)
-    .values({ email, googleId })
+    .values({ id: userId, email, googleId })
     .returning({ id: users.id });
   return { success: true, userId: row.id };
 }
