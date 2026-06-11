@@ -37,6 +37,19 @@ export const stories = sqliteTable("stories", {
     .$defaultFn(() => new Date()),
 });
 
+export const pictureBooks = sqliteTable("picture_books", {
+  id: text("id").primaryKey(),
+  storyId: text("story_id")
+    .notNull()
+    .references(() => stories.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  r2Key: text("r2_key").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type Story = typeof stories.$inferSelect;
+export type PictureBook = typeof pictureBooks.$inferSelect;

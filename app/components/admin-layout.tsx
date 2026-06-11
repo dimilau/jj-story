@@ -50,6 +50,12 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
           >
             Stories
           </Link>
+          <Link
+            to="/admin/picture-books"
+            className="block px-4 py-2 rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            Picture Books
+          </Link>
         </nav>
 
         <div className="relative" ref={dropdownRef}>

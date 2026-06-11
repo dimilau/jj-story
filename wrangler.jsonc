@@ -10,7 +10,8 @@
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
 		"GOOGLE_CLIENT_ID": "",
-		"GOOGLE_REDIRECT_URI": ""
+		"GOOGLE_REDIRECT_URI": "",
+		"R2_PUBLIC_URL": ""
 	},
 	"observability": {
 		"enabled": true
@@ -25,6 +26,13 @@
 			"database_name": "jumping-joy-story",
 			"database_id": "3a86b98c-d002-4e3f-bec1-ade6887f11ae",
 			"migrations_dir": "migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "jumping-joy-story",
+			"binding": "BUCKET",
+			"remote": true
 		}
 	]
 	/**

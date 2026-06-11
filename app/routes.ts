@@ -13,4 +13,6 @@ export default [
   route("admin/stories", "routes/admin.stories.tsx"),
   route("admin/stories/new", "routes/admin.stories.new.tsx"),
   route("admin/stories/:id/edit", "routes/admin.stories.$id.edit.tsx"),
+  route("admin/picture-books", "routes/admin.picture-books.tsx"),
+  route("admin/picture-books/:id/edit", "routes/admin.picture-books.$id.edit.tsx"),
 ] satisfies RouteConfig;
