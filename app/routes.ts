@@ -15,4 +15,8 @@ export default [
   route("admin/stories/:id/edit", "routes/admin.stories.$id.edit.tsx"),
   route("admin/picture-books", "routes/admin.picture-books.tsx"),
   route("admin/picture-books/:id/edit", "routes/admin.picture-books.$id.edit.tsx"),
+  route("admin/picture-books/:id/interview", "routes/admin.picture-books.$id.interview.tsx"),
+  route("admin/picture-books/:id/prompts", "routes/admin.picture-books.$id.prompts.tsx"),
+  route("admin/picture-books/:id/visuals", "routes/admin.picture-books.$id.visuals.tsx"),
+  route("admin/picture-books/:id/scene-image", "routes/admin.picture-books.$id.scene-image.tsx"),
 ] satisfies RouteConfig;

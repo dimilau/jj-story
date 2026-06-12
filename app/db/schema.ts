@@ -44,6 +44,7 @@ export const pictureBooks = sqliteTable("picture_books", {
     .references(() => stories.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   r2Key: text("r2_key").notNull(),
+  locked: integer("locked", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
