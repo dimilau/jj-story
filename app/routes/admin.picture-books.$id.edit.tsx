@@ -272,7 +272,6 @@ function SceneImage({
 export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
   const {
     user,
-    story,
     scenes: initialScenes,
     locked,
     visualDetails,
@@ -551,7 +550,7 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
     <AdminLayout userEmail={user.email}>
       <div className={locked ? "max-w-6xl" : "max-w-3xl"}>
         <div className="mb-6">
-          <h2 className="text-2xl font-bold">{story.title}</h2>
+          <h2 className="text-2xl font-bold">{loaderData.pictureBook.title}</h2>
           <p className="text-muted-foreground text-sm mt-1">Picture Book Editor</p>
         </div>
 

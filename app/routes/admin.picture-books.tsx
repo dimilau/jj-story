@@ -7,6 +7,7 @@ import { stories, pictureBooks } from "../db/schema";
 import { eq } from "drizzle-orm";
 import AdminLayout from "../components/admin-layout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
@@ -72,6 +73,8 @@ export async function action({ request }: Route.ActionArgs) {
   const [story] = await db.select().from(stories).where(eq(stories.id, storyId));
   if (!story) return { error: "Story not found" };
 
+  const title = (formData.get("title") as string)?.trim() || story.title;
+
   const openai = new OpenAI({
     baseURL: "https://api.deepseek.com",
     apiKey: env.DEEPSEEK_API_KEY,
@@ -107,7 +110,7 @@ export async function action({ request }: Route.ActionArgs) {
   await db.insert(pictureBooks).values({
     id: pictureBookId,
     storyId: story.id,
-    title: story.title,
+    title,
     r2Key,
   });
 
@@ -119,6 +122,7 @@ export default function AdminPictureBooks({ loaderData }: Route.ComponentProps) 
   const fetcher = useFetcher<{ error?: string }>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<{ id: string; title: string } | null>(null);
+  const [title, setTitle] = useState("");
 
   const isGenerating = fetcher.state !== "idle";
 
@@ -131,6 +135,7 @@ export default function AdminPictureBooks({ loaderData }: Route.ComponentProps) 
             size="sm"
             onClick={() => {
               setSelectedStory(null);
+              setTitle("");
               setDialogOpen(true);
             }}
           >
@@ -149,40 +154,49 @@ export default function AdminPictureBooks({ loaderData }: Route.ComponentProps) 
             <DialogHeader>
               <DialogTitle>New Picture Book</DialogTitle>
             </DialogHeader>
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex-1">
-                <Combobox
-                  items={allStories}
-                  itemToStringValue={(s) => s.title}
-                  value={selectedStory?.title ?? null}
-                  onValueChange={(val) => {
-                    const story = allStories.find((s) => s.title === val);
-                    setSelectedStory(story ?? null);
-                  }}
-                >
-                  <ComboboxInput
-                    placeholder="Select your story..."
-                    showClear={!!selectedStory}
-                    className="w-full"
-                  />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No stories found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(s: { id: string; title: string }) => (
-                        <ComboboxItem key={s.id} value={s.title}>
-                          {s.title}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-              </div>
+            <div className="flex flex-col gap-3 mt-2">
+              <Combobox
+                items={allStories}
+                itemToStringValue={(s) => s.title}
+                value={selectedStory?.title ?? null}
+                onValueChange={(val) => {
+                  const story = allStories.find((s) => s.title === val);
+                  setSelectedStory(story ?? null);
+                  setTitle(story?.title ?? "");
+                }}
+              >
+                <ComboboxInput
+                  placeholder="Select your story..."
+                  showClear={!!selectedStory}
+                  className="w-full"
+                />
+                <ComboboxContent>
+                  <ComboboxEmpty>No stories found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(s: { id: string; title: string }) => (
+                      <ComboboxItem key={s.id} value={s.title}>
+                        {s.title}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+
+              {selectedStory && (
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Picture book title"
+                />
+              )}
+
               <Button
-                disabled={!selectedStory || isGenerating}
+                className="self-end"
+                disabled={!selectedStory || !title.trim() || isGenerating}
                 onClick={() => {
                   if (selectedStory) {
                     fetcher.submit(
-                      { storyId: selectedStory.id },
+                      { storyId: selectedStory.id, title: title.trim() },
                       { method: "POST" }
                     );
                   }
