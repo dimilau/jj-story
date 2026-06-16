@@ -126,11 +126,15 @@ function SceneContent({
   onSplit: (splitPos: number) => void;
   disabled?: boolean;
 }) {
-  // Sentence-ending punctuation, including CJK full-width forms (。！？),
-  // which use no spaces between sentences.
+  // Sentence-ending punctuation, including CJK full-width forms (。！？)
+  // and ellipses — "…" (U+2026 horizontal ellipsis), "⋯" (U+22EF midline
+  // horizontal ellipsis, commonly doubled as "⋯⋯" in CJK text), and "..." —
+  // treating a whole run as one terminator so the split point lands right
+  // after it rather than between its characters.
+  const TERMINATOR_RE = /\.{3,}|[…⋯]+|[.。！？!?]/g;
   const periodPositions: number[] = [];
-  for (let i = 0; i < content.length; i++) {
-    if (".。！？!?".includes(content[i])) periodPositions.push(i);
+  for (const m of content.matchAll(TERMINATOR_RE)) {
+    periodPositions.push(m.index! + m[0].length - 1);
   }
 
   if (disabled || periodPositions.length <= 1) {
