@@ -22,7 +22,7 @@ export type VisualDetails = {
 };
 
 export type ScenePrompt = {
-  scene: string;
+  scene_id: string;
   image_prompt: string;
   reference_images: string[];
 };
@@ -113,14 +113,14 @@ Generate a high-quality image prompt for each scene provided. Each prompt must b
 
 ## Output Format
 Return a JSON array where each element has:
-- "scene": The scene identifier (e.g., "Scene 1")
+- "scene_id": The scene's 1-based index, matching the "scene_id" of the corresponding scene in the Scenes list (e.g., "1")
 - "image_prompt": A detailed English description (single-line, no linebreaks), with reference-imaged characters/props tagged as "(image N)" per the Reference Images rule below
 - "reference_images": An array of character/prop IDs from the Visual Bible that appear in the prompt, in order of appearance (max 4 items, characters/props only — never locations)
 
 Example:
 [
   {
-    "scene": "Scene 1",
+    "scene_id": "1",
     "image_prompt": "...",
     "reference_images": ["C1", "P1"]
   }

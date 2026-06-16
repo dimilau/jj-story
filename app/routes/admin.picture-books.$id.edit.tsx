@@ -206,11 +206,6 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-// Extracts the trailing scene number from a label like "Scene 3".
-function sceneNumber(label: string): number | null {
-  const m = label.match(/(\d+)/);
-  return m ? Number(m[1]) : null;
-}
 
 function SceneImage({
   pictureBookId,
@@ -384,8 +379,8 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
   // Lookups for displaying generated prompts on each scene card.
   const promptByScene = new Map<number, ScenePrompt>();
   for (const p of scenePrompts ?? []) {
-    const n = sceneNumber(p.scene);
-    if (n != null) promptByScene.set(n, p);
+    const n = Number(p.scene_id);
+    if (!Number.isNaN(n)) promptByScene.set(n, p);
   }
   const nounById = new Map<string, string>();
   for (const v of visualDetails?.visual_bible ?? []) {

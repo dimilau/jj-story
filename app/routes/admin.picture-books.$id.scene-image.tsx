@@ -7,11 +7,6 @@ import { env } from "cloudflare:workers";
 import { generateFluxImage } from "../lib/flux.server";
 import type { ScenePrompt } from "../lib/picture-book-prompts.server";
 
-function sceneNumber(label: string): number | null {
-  const m = label.match(/(\d+)/);
-  return m ? Number(m[1]) : null;
-}
-
 export async function action({ request, params }: Route.ActionArgs) {
   const user = await getSessionUser(request);
   if (!user || user.role !== "admin") {
@@ -51,7 +46,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     await scenePromptsObject.text()
   );
 
-  const prompt = scenePrompts.find((p) => sceneNumber(p.scene) === sceneNum);
+  const prompt = scenePrompts.find((p) => Number(p.scene_id) === sceneNum);
   if (!prompt) {
     return Response.json(
       { error: `No prompt found for scene ${sceneNum}` },
