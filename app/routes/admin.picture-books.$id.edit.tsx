@@ -7,9 +7,10 @@ import { stories, pictureBooks } from "../db/schema";
 import { eq } from "drizzle-orm";
 import AdminLayout from "../components/admin-layout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon, ChevronDownIcon } from "lucide-react";
+import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon, ChevronDownIcon, PencilIcon } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { env } from "cloudflare:workers";
 import VisualInterviewChat from "../components/visual-interview-chat";
@@ -112,6 +113,19 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     return { success: true };
+  }
+
+  if (intent === "rename") {
+    const title = (formData.get("title") as string)?.trim();
+    if (!title) return { error: "Title cannot be empty" };
+
+    const db = getDb();
+    await db
+      .update(pictureBooks)
+      .set({ title })
+      .where(eq(pictureBooks.id, params.id!));
+
+    return { success: true, title };
   }
 
   return { error: "Unknown action" };
@@ -264,6 +278,85 @@ function SceneImage({
           alt={`Scene ${sceneNum}`}
           className="rounded-lg border border-border max-w-md w-full"
         />
+      )}
+    </div>
+  );
+}
+
+function TitleEditor({
+  pictureBookId,
+  initialTitle,
+}: {
+  pictureBookId: string;
+  initialTitle: string;
+}) {
+  const fetcher = useFetcher<{ success?: boolean; title?: string; error?: string }>();
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(initialTitle);
+  const isSaving = fetcher.state !== "idle";
+
+  // On a successful rename the loader revalidates with the new title, so
+  // stay in sync with it. On a failed rename, roll back the optimistic edit.
+  useEffect(() => {
+    setTitle(initialTitle);
+  }, [initialTitle]);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.error) {
+      setTitle(initialTitle);
+    }
+  }, [fetcher.state, fetcher.data, initialTitle]);
+
+  const commit = () => {
+    const trimmed = title.trim();
+    if (!trimmed || trimmed === initialTitle) {
+      setTitle(initialTitle);
+      setEditing(false);
+      return;
+    }
+    fetcher.submit(
+      { intent: "rename", title: trimmed },
+      { method: "POST", action: `/admin/picture-books/${pictureBookId}/edit` }
+    );
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2">
+        <Input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setTitle(initialTitle);
+              setEditing(false);
+            }
+          }}
+          className="text-2xl font-bold h-auto py-1"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 group">
+      <h2 className="text-2xl font-bold">{title}</h2>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setEditing(true)}
+        disabled={isSaving}
+        aria-label="Rename picture book"
+        className="opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <PencilIcon className="h-4 w-4" />
+      </Button>
+      {fetcher.data?.error && (
+        <p className="text-destructive text-sm">{fetcher.data.error}</p>
       )}
     </div>
   );
@@ -550,7 +643,10 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
     <AdminLayout userEmail={user.email}>
       <div className={locked ? "max-w-6xl" : "max-w-3xl"}>
         <div className="mb-6">
-          <h2 className="text-2xl font-bold">{loaderData.pictureBook.title}</h2>
+          <TitleEditor
+            pictureBookId={loaderData.pictureBook.id}
+            initialTitle={loaderData.pictureBook.title}
+          />
           <p className="text-muted-foreground text-sm mt-1">Picture Book Editor</p>
         </div>
 
