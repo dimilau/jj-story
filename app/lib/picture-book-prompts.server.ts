@@ -93,13 +93,13 @@ When crafting style presets for the author to choose from, ensure each preset:
 ## Reference Sheet Prompt Guidelines
 
 Image prompt template for characters:
-\`Character design reference sheet of a [AGE] [ETHNICITY] [GENDER] with [PHYSICAL TRAITS]. Wearing [OUTFIT] and [SHOES/ACCESSORIES]. [EXPRESSION/PERSONALITY]. Full body standing pose, [PROPORTIONS, e.g., 3 heads tall]. Front view, side view, back view, and 3/4 view. All views at identical scale, evenly spaced, centered on a white background. Flat lighting, consistent features, high detail. Children book illustration meets animation model sheet. Clean outlines.\`
+\`Reference sheet of a [AGE] [ETHNICITY] [GENDER] with [PHYSICAL TRAITS]. Wearing [OUTFIT] and [SHOES/ACCESSORIES]. [EXPRESSION/PERSONALITY]. Full body standing pose, [PROPORTIONS, e.g., 3 heads tall]. Front view, side view, back view, and 3/4 view. All views at identical scale. [Style description].\`
 
 Image prompt format for animals:
-\`Character design reference sheet of a [adjective] [species/breed]. [Body & Build description]. [Head & Face description]. [Limbs & Tail description]. Top left: [first view], [pose detail]. Top right: [second view], [pose detail]. Bottom center: [third view], [pose detail]. All views displayed at identical scale, aligned by baseline/ground plane, no overlap. Grid layout: 3 panels arranged in an inverted triangle (or row, for 2+ side views). Flat lighting, consistent features, high detail. Children book illustration meets animation model sheet. Clean outlines.\`
+\`Reference sheet of a [adjective] [species/breed]. [Body & Build description]. [Head & Face description]. [Limbs & Tail description]. Top left: [first view], [pose detail]. Top right: [second view], [pose detail]. Bottom center: [third view], [pose detail]. All views displayed at identical scale, consistent features, no overlap. [Style description].\`
 
 Image prompt format for props:
-\`Prop design reference sheet of a [adjective] [prop name/type]. [Material & Texture description]. [Shape & Structure description]. [Color & Finish description]. [Key Details, e.g., functional parts, wear/age, surface markings, decorations]. Top left: front view, [pose/detail note]. Top right: side view, [pose/detail note]. Bottom left: back view, [pose/detail note]. Bottom right: 3/4 view, [pose/detail note]. All views displayed at identical scale, aligned by baseline/ground plane, centered on a white background, no overlap. [SCALE REFERENCE, e.g., shown beside a hand silhouette for size context]. Flat lighting, consistent features, high detail. Children book illustration meets animation model sheet. Clean outlines.\`
+\`Reference sheet of a [adjective] [prop name/type]. [Material & Texture description]. [Shape & Structure description]. [Color & Finish description]. [Key Details, e.g., functional parts, wear/age, surface markings, decorations]. Top left: front view, [pose/detail note]. Top right: side view, [pose/detail note]. Bottom left: back view, [pose/detail note]. Bottom right: 3/4 view, [pose/detail note]. All views displayed at identical scale, consistent features, no overlap. [Style description].\`
 
 Start the interview now. Begin by briefly acknowledging the story, then ask your first 2-3 questions.`;
 

@@ -200,3 +200,7 @@ Each scene item in the "Scenes" section will have the following UI elements.
   - Reference images list (if any) - will be displayed as a horizontal list of Shadcn badges with the "Image {index}: {ID} ({noun})" of the visual bible item.
   - Generate Image button - when clicked, it will generate the image for the scene using the generated prompt and the reference images.
   - After the image is generated, it will be displayed somewhere in the scene item card.
+
+### Amendments
+- Inside Scene Item Card, use Shadcn collapsible component, to show & hide the generated prompt text & reference images list.
+

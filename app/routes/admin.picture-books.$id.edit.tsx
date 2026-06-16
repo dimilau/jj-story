@@ -9,7 +9,8 @@ import AdminLayout from "../components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon } from "lucide-react";
+import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon, ChevronDownIcon } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { env } from "cloudflare:workers";
 import VisualInterviewChat from "../components/visual-interview-chat";
 import VisualStyleSection from "../components/visual-style-section";
@@ -420,22 +421,22 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
             <Button
               size="sm"
               onClick={handleGeneratePrompts}
-              disabled={!visualDetails || hasPrompts || isGeneratingPrompts}
+              disabled={!visualDetails || isGeneratingPrompts}
               title={
                 !visualDetails
                   ? "Complete the visual interview first"
                   : undefined
               }
             >
-              {hasPrompts ? (
-                <>
-                  <CheckIcon className="h-4 w-4 mr-1" />
-                  Prompts Generated
-                </>
-              ) : isGeneratingPrompts ? (
+              {isGeneratingPrompts ? (
                 <>
                   <Spinner data-icon="inline-start" />
                   Generating...
+                </>
+              ) : hasPrompts ? (
+                <>
+                  <SparklesIcon className="h-4 w-4 mr-1" />
+                  Regenerate Prompts
                 </>
               ) : (
                 <>
@@ -496,31 +497,37 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
               const prompt = promptByScene.get(index + 1);
               if (!prompt) return null;
               return (
-                <div className="mt-4 space-y-3">
-                  <div className="relative">
-                    <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
-                      {prompt.image_prompt}
-                    </pre>
-                    <CopyButton text={prompt.image_prompt} />
-                  </div>
-
-                  {prompt.reference_images.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {prompt.reference_images.map((id, i) => (
-                        <Badge key={id} variant="secondary">
-                          Image {i}: {id} ({nounById.get(id) ?? "?"})
-                        </Badge>
-                      ))}
+                <Collapsible className="mt-4 border-t border-border pt-3">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
+                    <span>Scene Prompt &amp; Images</span>
+                    <ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3 space-y-3">
+                    <div className="relative">
+                      <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
+                        {prompt.image_prompt}
+                      </pre>
+                      <CopyButton text={prompt.image_prompt} />
                     </div>
-                  )}
 
-                  <SceneImage
-                    pictureBookId={loaderData.pictureBook.id}
-                    sceneNum={index + 1}
-                    hasImage={sceneImageSet.has(index + 1)}
-                    r2PublicUrl={r2PublicUrl}
-                  />
-                </div>
+                    {prompt.reference_images.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {prompt.reference_images.map((id, i) => (
+                          <Badge key={id} variant="secondary">
+                            Image {i}: {id} ({nounById.get(id) ?? "?"})
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <SceneImage
+                      pictureBookId={loaderData.pictureBook.id}
+                      sceneNum={index + 1}
+                      hasImage={sceneImageSet.has(index + 1)}
+                      r2PublicUrl={r2PublicUrl}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })()}
           </div>

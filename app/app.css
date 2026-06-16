@@ -142,3 +142,15 @@ body {
     @apply font-sans;
   }
 }
+
+/* Markdown rendered inside chat bubbles */
+.markdown-bubble p { @apply mb-2 last:mb-0; }
+.markdown-bubble ul { @apply mb-2 list-disc pl-4; }
+.markdown-bubble ol { @apply mb-2 list-decimal pl-4; }
+.markdown-bubble li { @apply mb-0.5; }
+.markdown-bubble strong { @apply font-semibold; }
+.markdown-bubble em { @apply italic; }
+.markdown-bubble code { @apply rounded bg-black/10 px-1 font-mono text-xs; }
+.markdown-bubble pre { @apply mb-2 rounded bg-black/10 p-2 font-mono text-xs whitespace-pre-wrap; }
+.markdown-bubble pre code { @apply bg-transparent p-0; }
+.markdown-bubble h1,.markdown-bubble h2,.markdown-bubble h3 { @apply mb-1 font-semibold; }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/input-group";
 import { SendIcon, SparklesIcon, CheckCircle2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { marked } from "marked";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -114,19 +115,22 @@ export default function VisualInterviewChat({
     <div className="flex h-full flex-col">
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-3 p-4">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={cn(
-                "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
-                m.role === "user"
-                  ? "self-end bg-primary text-primary-foreground"
-                  : "self-start bg-muted"
-              )}
-            >
-              {m.content}
-            </div>
-          ))}
+          {messages.map((m, i) =>
+            m.role === "user" ? (
+              <div
+                key={i}
+                className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground whitespace-pre-wrap"
+              >
+                {m.content}
+              </div>
+            ) : (
+              <div
+                key={i}
+                className="markdown-bubble max-w-[85%] self-start rounded-lg bg-muted px-3 py-2 text-sm"
+                dangerouslySetInnerHTML={{ __html: marked.parse(m.content) as string }}
+              />
+            )
+          )}
           {isSending && (
             <div className="self-start rounded-lg bg-muted px-3 py-2">
               <Spinner className="h-4 w-4" />
