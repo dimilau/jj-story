@@ -126,16 +126,23 @@ function SceneContent({
   onSplit: (splitPos: number) => void;
   disabled?: boolean;
 }) {
+  // Sentence-ending punctuation, including CJK full-width forms (。！？),
+  // which use no spaces between sentences.
   const periodPositions: number[] = [];
   for (let i = 0; i < content.length; i++) {
-    if (content[i] === ".") periodPositions.push(i);
+    if (".。！？!?".includes(content[i])) periodPositions.push(i);
   }
 
   if (disabled || periodPositions.length <= 1) {
     return <p className="text-sm leading-relaxed">{content}</p>;
   }
 
-  const splitPoints = periodPositions.slice(0, -1);
+  // Only offer a split at a punctuation mark if there's real content after
+  // it — i.e. skip the mark(s) trailing right at the end of the scene (which
+  // may not be the *last* detected position, e.g. when the scene ends in an
+  // ellipsis "……" that isn't itself recognized as sentence-ending).
+  const trimmedLength = content.trimEnd().length;
+  const splitPoints = periodPositions.filter((idx) => idx + 1 < trimmedLength);
   const parts: React.ReactNode[] = [];
   let lastIdx = 0;
 
