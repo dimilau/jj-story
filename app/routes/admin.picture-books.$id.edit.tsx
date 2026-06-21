@@ -128,6 +128,25 @@ export async function action({ request, params }: Route.ActionArgs) {
     return { success: true, title };
   }
 
+  if (intent === "update-prompt") {
+    const sceneId = formData.get("sceneId") as string;
+    const imagePrompt = (formData.get("imagePrompt") as string)?.trim();
+    if (!sceneId || !imagePrompt) return { error: "Missing scene or prompt text" };
+
+    const key = `picture-books/${params.id}/scene-prompts.json`;
+    const object = await env.BUCKET.get(key);
+    if (!object) return { error: "Scene prompts not found" };
+
+    const scenePrompts: ScenePrompt[] = JSON.parse(await object.text());
+    const index = scenePrompts.findIndex((p) => p.scene_id === sceneId);
+    if (index === -1) return { error: `No prompt found for scene ${sceneId}` };
+
+    scenePrompts[index] = { ...scenePrompts[index], image_prompt: imagePrompt };
+    await env.BUCKET.put(key, JSON.stringify(scenePrompts));
+
+    return { success: true };
+  }
+
   return { error: "Unknown action" };
 }
 
@@ -193,7 +212,6 @@ function CopyButton({ text }: { text: string }) {
     <Button
       variant="ghost"
       size="icon-sm"
-      className="absolute top-1.5 right-1.5"
       onClick={() => {
         navigator.clipboard.writeText(text);
         setCopied(true);
@@ -203,6 +221,94 @@ function CopyButton({ text }: { text: string }) {
     >
       {copied ? <CheckIcon className="h-3.5 w-3.5" /> : <CopyIcon className="h-3.5 w-3.5" />}
     </Button>
+  );
+}
+
+function PromptEditor({
+  pictureBookId,
+  sceneId,
+  initialPrompt,
+}: {
+  pictureBookId: string;
+  sceneId: string;
+  initialPrompt: string;
+}) {
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(initialPrompt);
+  const isSaving = fetcher.state !== "idle";
+
+  // Stay in sync with the saved prompt: a successful edit revalidates the
+  // loader with the new text, and this also covers reverting after a
+  // failed save (the stored prompt, and thus initialPrompt, is unchanged).
+  useEffect(() => {
+    if (!editing) setText(initialPrompt);
+  }, [initialPrompt, editing]);
+
+  const handleSave = () => {
+    const trimmed = text.trim();
+    if (!trimmed || trimmed === initialPrompt) {
+      setText(initialPrompt);
+      setEditing(false);
+      return;
+    }
+    fetcher.submit(
+      { intent: "update-prompt", sceneId, imagePrompt: trimmed },
+      { method: "POST", action: `/admin/picture-books/${pictureBookId}/edit` }
+    );
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+          className="w-full rounded-lg border border-border bg-muted/50 p-3 text-xs font-mono whitespace-pre-wrap resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setText(initialPrompt);
+              setEditing(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave}>
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
+        {text}
+      </pre>
+      <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5">
+        <CopyButton text={text} />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setEditing(true)}
+          disabled={isSaving}
+          aria-label="Edit prompt"
+        >
+          <PencilIcon className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {fetcher.data?.error && (
+        <p className="text-destructive text-sm mt-2">{fetcher.data.error}</p>
+      )}
+    </div>
   );
 }
 
@@ -601,12 +707,11 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
                     <ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-3 space-y-3">
-                    <div className="relative">
-                      <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
-                        {prompt.image_prompt}
-                      </pre>
-                      <CopyButton text={prompt.image_prompt} />
-                    </div>
+                    <PromptEditor
+                      pictureBookId={loaderData.pictureBook.id}
+                      sceneId={prompt.scene_id}
+                      initialPrompt={prompt.image_prompt}
+                    />
 
                     {prompt.reference_images.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
