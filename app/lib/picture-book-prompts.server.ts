@@ -18,7 +18,7 @@ export type VisualBibleEntry = {
 
 export type VisualDetails = {
   visual_bible: VisualBibleEntry[];
-  style_block: string;
+  art_style: string;
 };
 
 export type ScenePrompt = {
@@ -43,7 +43,7 @@ Your job is to interview the author using multiple-choice questions to clarify a
 
 Ask ONLY 2-3 multiple-choice questions at a time. Cover the following aspects across all your questions (you may add more if relevant):
 
-1. **Overall visual style preset** — Instead of asking about individual layers (genre, medium, line, color, quality), the AI must first analyze the story's tone, setting, and target audience, then craft 4-5 complete, cohesive style presets. Each preset is a fully composed package spanning all 5 style layers (genre anchor, medium/texture, line/brushwork, color treatment, quality/format). The author simply picks the preset that resonates. The AI then internally decomposes the chosen preset into the 5 layers when building the final [STYLE] block.
+1. **Overall visual style preset** — Instead of asking about individual layers (genre, medium, line, color, quality), the AI must first analyze the story's tone, setting, and target audience, then craft 4-5 complete, cohesive style presets. Each preset is a fully composed package spanning all 5 style layers (genre anchor, medium/texture, line/brushwork, color treatment, quality/format). The author simply picks the preset that resonates. The AI then internally decomposes the chosen preset into the 5 layers when building the final art style.
 2. Character anchor features & consistency (for each recurring character identified in the scenes)
 3. Key plot props (size, material, importance to scene)
 4. Location, setting & weather
@@ -59,11 +59,11 @@ Ask ONLY 2-3 multiple-choice questions at a time. Cover the following aspects ac
     - ID guideline: C prefix for characters, P prefix for props, L prefix for locations, followed by a number (e.g., C1, P1, L1)
     - Characters and props get Reference Sheet Prompts; location elements get null.
     - Appearance descriptions should be concise but specific, covering key visual traits that must remain consistent (e.g., "An 8-year-old girl with long dark brown hair tied into two neat braided pigtails, wearing a simple pastel yellow knitted sweater and denim overalls, with a focused and serene facial expression").
-  - **A \`[STYLE]\` text block** — a single, static, comma-separated description containing ONLY unchanging visual style DNA. It must follow the exact template: \`[STYLE] {Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}\`. Do NOT include emotion, mood, atmosphere, lighting, or action words. These will be injected per-scene by the prompt generator.
+  - **An art style text** — a single, static, comma-separated description containing ONLY unchanging visual style DNA. It must follow the exact template: \`{Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}\`. Do NOT include emotion, mood, atmosphere, lighting, or action words. These will be injected per-scene by the prompt generator.
 
-## [STYLE] Block Template Guide
+## Art Style Template Guide
 
-When assembling the final \`[STYLE]\` block, map the author's chosen preset to these **5 immutable layers**. Use commas to separate. Never add mood, emotion, atmosphere, lighting, or action descriptors.
+When assembling the final art style, map the author's chosen preset to these **5 immutable layers**. Use commas to separate. Never add mood, emotion, atmosphere, lighting, or action descriptors.
 
 | Layer | What to capture | Example phrases |
 |---|---|---|
@@ -74,11 +74,11 @@ When assembling the final \`[STYLE]\` block, map the author's chosen preset to t
 | **Quality/Format** | Production value | \`high-quality digital illustration\`, \`8K ultra-detailed\`, \`flat lighting for reference\`, \`picture book spread composition\` |
 
 ### Rules for the LLM
-- **Static DNA only**: The \`[STYLE]\` block is the "CSS" of the story — it never changes between scenes.
+- **Static DNA only**: The art style is the "CSS" of the story — it never changes between scenes.
 - **No mood leakage**: Words like \`cozy\`, \`ominous\`, \`whimsical\`, \`emotional\`, \`soothing\`, \`dramatic\`, \`tense\` are forbidden. These belong in the per-scene prompt generator.
-- **No lighting**: \`golden hour\`, \`harsh shadows\`, \`soft diffused light\` are scene-dependent. Keep them out of \`[STYLE]\`.
+- **No lighting**: \`golden hour\`, \`harsh shadows\`, \`soft diffused light\` are scene-dependent. Keep them out of the art style.
 - **No action**: \`candid moment\`, \`high-energy action\`, \`still portrait\` describe scene content, not style.
-- **One line, comma-separated**: Always format as \`[STYLE] Layer1, Layer2, Layer3, Layer4, Layer5\`.
+- **One line, comma-separated**: Always format as \`Layer1, Layer2, Layer3, Layer4, Layer5\`.
 
 ## Preset Design Guidelines for the LLM
 
@@ -114,7 +114,7 @@ export const SCENE_PROMPT_GENERATOR_SYSTEM_PROMPT = `
 每次你会收到：
 1. 场景列表，位于 \`## Scenes\` 下，格式为 \`Scene {id}: {content}\`
 2. 视觉圣经，格式为 \`{id} ({noun}): {appearance_description}\`（C 前缀=角色，P 前缀=道具，L 前缀=地点）
-3. \`style_block\` 字符串，格式为 \`[STYLE] {Genre}, {Medium}, {Line}, {Color}, {Quality}\`
+3. \`art_style\` 字符串，格式为 \`{Genre}, {Medium}, {Line}, {Color}, {Quality}\`
 
 # 核心规则
 
@@ -136,7 +136,7 @@ export const SCENE_PROMPT_GENERATOR_SYSTEM_PROMPT = `
 
 | 模块 | 内容 | 边界约束 |
 |------|------|---------|
-| ① 风格基调 | 直接复用 \`style_block\` + 本场景情绪氛围词 | 情绪词动态注入，不修改 style_block |
+| ① 风格基调 | 直接复用 \`art_style\` + 本场景情绪氛围词 | 情绪词动态注入，不修改 art_style |
 | ② 主体描述 | 主体引用 + 姿势/表情 + 环境交互细节 | C/P 用 (image N)；溢出/L 用完整外观描述 |
 | ③ 空间构图 | 景别 + 主体与背景位置关系 + 背景完整描述 | 不涉及景深、角度、构图法则 |
 | ④ 光线氛围 | 主光源描述 + 色温/氛围描述 + 可选视觉隐喻 | 视觉隐喻全篇最多 1 个，仅放此处 |
@@ -208,7 +208,7 @@ export const SAVE_VISUAL_DETAILS_TOOL = {
   function: {
     name: "save_visual_details",
     description:
-      "Save the finalized Visual Bible and [STYLE] block once all visual details have been clarified through the interview.",
+      "Save the finalized Visual Bible and art style once all visual details have been clarified through the interview.",
     parameters: {
       type: "object",
       properties: {
@@ -252,13 +252,13 @@ export const SAVE_VISUAL_DETAILS_TOOL = {
             ],
           },
         },
-        style_block: {
+        art_style: {
           type: "string",
           description:
-            "Single comma-separated [STYLE] block: '[STYLE] {Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}'. No mood, lighting, or action words.",
+            "Single comma-separated art style: '{Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}'. No mood, lighting, or action words.",
         },
       },
-      required: ["visual_bible", "style_block"],
+      required: ["visual_bible", "art_style"],
     },
   },
 };
@@ -285,7 +285,7 @@ export function formatVisualBible(visualBible: VisualBibleEntry[]): string {
 export function buildScenePromptsUserMessage(
   scenes: Scene[],
   visualDetails: VisualDetails
-): string {
+): string { 
   return [
     "## Scenes",
     formatSceneList(scenes),
@@ -293,7 +293,7 @@ export function buildScenePromptsUserMessage(
     "## Visual Bible",
     formatVisualBible(visualDetails.visual_bible),
     "",
-    "## Style Block",
-    visualDetails.style_block,
+    "## Art Style",
+    visualDetails.art_style,
   ].join("\n");
 }

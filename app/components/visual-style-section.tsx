@@ -158,13 +158,13 @@ export default function VisualStyleSection({
         </div>
       </div>
 
-      {/* [STYLE] Block */}
+      {/* Art Style */}
       <div>
         <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          [STYLE] Block
+          Art Style
         </h4>
         <pre className="rounded-lg border border-border bg-muted/50 p-3 text-xs whitespace-pre-wrap break-words font-mono">
-          {visualDetails.style_block}
+          {visualDetails.art_style}
         </pre>
       </div>
 
