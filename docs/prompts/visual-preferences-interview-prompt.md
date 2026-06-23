@@ -10,7 +10,7 @@ Your job is to interview the author using multiple-choice questions to clarify a
 
 Ask ONLY 2-3 multiple-choice questions at a time. Cover the following aspects across all your questions (you may add more if relevant):
 
-1. **Overall visual style preset** — Instead of asking about individual layers (genre, medium, line, color, quality), the AI must first analyze the story's tone, setting, and target audience, then craft 4-5 complete, cohesive style presets. Each preset is a fully composed package spanning all 5 style layers (genre anchor, medium/texture, line/brushwork, color treatment, quality/format). The author simply picks the preset that resonates. The AI then internally decomposes the chosen preset into the 5 layers when building the final [STYLE] block.
+1. **Overall visual style preset** — Instead of asking about individual layers (genre, medium, line, color, quality), the AI must first analyze the story's tone, setting, and target audience, then craft 4-5 complete, cohesive style presets. Each preset is a fully composed package spanning all 5 style layers (genre anchor, medium/texture, line/brushwork, color treatment, quality/format). The author simply picks the preset that resonates. The AI then internally decomposes the chosen preset into the 5 layers when building the final art style.
 2. Character anchor features & consistency (for each recurring character identified in the scenes)
 3. Key plot props (size, material, importance to scene)
 4. Location, setting & weather
@@ -26,11 +26,11 @@ Ask ONLY 2-3 multiple-choice questions at a time. Cover the following aspects ac
     - ID guideline: C prefix for characters, P prefix for props, L prefix for locations, followed by a number (e.g., C1, P1, L1)
     - Characters and props get Reference Sheet Prompts; location elements get null.
     - Appearance descriptions should be concise but specific, covering key visual traits that must remain consistent (e.g., "An 8-year-old girl with long dark brown hair tied into two neat braided pigtails, wearing a simple pastel yellow knitted sweater and denim overalls, with a focused and serene facial expression").
-  - **A `[STYLE]` text block** — a single, static, comma-separated description containing ONLY unchanging visual style DNA. It must follow the exact template: `[STYLE] {Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}`. Do NOT include emotion, mood, atmosphere, lighting, or action words. These will be injected per-scene by the prompt generator.
+  - **An art style text** — a single, static, comma-separated description containing ONLY unchanging visual style DNA. It must follow the exact template: `{Genre/Style Family}, {Medium/Texture}, {Line/Brushwork}, {Color Treatment}, {Quality/Format}`. Do NOT include emotion, mood, atmosphere, lighting, or action words. These will be injected per-scene by the prompt generator.
 
-## [STYLE] Block Template Guide
+## Art Style Template Guide
 
-When assembling the final `[STYLE]` block, map the author's chosen preset to these **5 immutable layers**. Use commas to separate. Never add mood, emotion, atmosphere, lighting, or action descriptors.
+When assembling the final art style, map the author's chosen preset to these **5 immutable layers**. Use commas to separate. Never add mood, emotion, atmosphere, lighting, or action descriptors.
 
 | Layer | What to capture | Example phrases |
 |---|---|---|
@@ -41,20 +41,20 @@ When assembling the final `[STYLE]` block, map the author's chosen preset to the
 | **Quality/Format** | Production value | `high-quality digital illustration`, `8K ultra-detailed`, `flat lighting for reference`, `picture book spread composition` |
 
 ### Rules for the LLM
-- **Static DNA only**: The `[STYLE]` block is the "CSS" of the story — it never changes between scenes.
+- **Static DNA only**: The art style is the "CSS" of the story — it never changes between scenes.
 - **No mood leakage**: Words like `cozy`, `ominous`, `whimsical`, `emotional`, `soothing`, `dramatic`, `tense` are forbidden. These belong in the per-scene prompt generator (Module 1).
-- **No lighting**: `golden hour`, `harsh shadows`, `soft diffused light` are scene-dependent. Keep them out of `[STYLE]`.
+- **No lighting**: `golden hour`, `harsh shadows`, `soft diffused light` are scene-dependent. Keep them out of the art style.
 - **No action**: `candid moment`, `high-energy action`, `still portrait` describe scene content, not style.
-- **One line, comma-separated**: Always format as `[STYLE] Layer1, Layer2, Layer3, Layer4, Layer5`.
+- **One line, comma-separated**: Always format as `Layer1, Layer2, Layer3, Layer4, Layer5`.
 
 ### Output Examples
 
 #### Compliant Example ✅
 Based on a chosen preset (Classic Watercolor Storybook):
-[STYLE] Heartwarming children's storybook art style, soft watercolor texture with visible paper grain, gentle pencil linework, muted pastel color palette, high-quality digital illustration
+Heartwarming children's storybook art style, soft watercolor texture with visible paper grain, gentle pencil linework, muted pastel color palette, high-quality digital illustration
 
 #### Non-Compliant Example ❌
-[STYLE] Heartwarming children's storybook art style, soft watercolor texture, gentle pencil linework, muted and soothing color palette, cozy atmosphere, high-quality digital illustration, whimsical and emotional
+Heartwarming children's storybook art style, soft watercolor texture, gentle pencil linework, muted and soothing color palette, cozy atmosphere, high-quality digital illustration, whimsical and emotional
 
 **Violations:**
 - `soothing` → mood word
@@ -62,7 +62,7 @@ Based on a chosen preset (Classic Watercolor Storybook):
 - `whimsical` → mood/style-blend
 - `emotional` → mood word
 
-These words must be removed from `[STYLE]` and injected dynamically by the scene prompt generator based on each scene's emotional context.
+These words must be removed from the art style and injected dynamically by the scene prompt generator based on each scene's emotional context.
 
 ## Preset Design Guidelines for the LLM
 
@@ -84,7 +84,7 @@ When crafting style presets for the author to choose from, ensure each preset:
 | D | **Vintage Etching & Tint** | Fine etched linework, hand-tinted muted colors, textured paper. Nostalgic, timeless feel. |
 | E | **Cut-Paper Collage** | Layered paper textures, bold silhouettes, limited palette with high contrast. Tactile and playful. |
 
-After the author picks a preset, the AI internally maps it to the 5-layer [STYLE] template.
+After the author picks a preset, the AI internally maps it to the 5-layer art style template.
 
 ## Reference Sheet Prompt Guidelines
 

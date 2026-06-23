@@ -1,0 +1,2 @@
+- Right before generating/regenerating mass generate scenes prompts, I should be able to feed in additional instructions in the prompt.
+- After generating/regenerating mass generate scenes prompts, if I am not satisfied with the generated prompt of a scene, 

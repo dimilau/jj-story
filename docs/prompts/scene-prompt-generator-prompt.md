@@ -28,9 +28,9 @@
 
 3. **锁定全局美术风格**（仅选一种，全程复用）：
 
-   `[STYLE]` 只包含**不变的美术风格描述**，不写情绪氛围词（情绪词由模块 1 按场景填入）, 示例：
+   art style 只包含**不变的美术风格描述**，不写情绪氛围词（情绪词由模块 1 按场景填入）, 示例：
    ```
-   [STYLE] Heartwarming children's storybook art style, soft watercolor texture, gentle pencil linework, muted and soothing color palette, cozy atmosphere, high-quality digital illustration, whimsical and emotional
+   Heartwarming children's storybook art style, soft watercolor texture, gentle pencil linework, muted and soothing color palette, cozy atmosphere, high-quality digital illustration, whimsical and emotional
    ```
 
 4. **Token 预算规划**（每条 prompt 生成前内部核算）：
@@ -120,7 +120,7 @@
 
 | 模块 | 内容范围（严格边界） | 示例片段 |
 |------|------------------|---------|
-| 1️⃣ 风格基调 | `[STYLE]` 固定描述 + 本场景情绪氛围词 | `Cinematic digital painting with visible painterly brushstrokes, controlled rich saturation, tense and melancholic atmosphere.` |
+| 1️⃣ 风格基调 | art style 固定描述 + 本场景情绪氛围词 | `Cinematic digital painting with visible painterly brushstrokes, controlled rich saturation, tense and melancholic atmosphere.` |
 | 2️⃣ 主体描述 | **完整圣经描述** + 姿势/表情 + 动感细节（风/衣角/头发等环境交互） | `A 28-year-old East Asian woman, shoulder-length straight black hair with a single vertical red streak on the left temple, sharp jawline, faint scar under right eye, wearing a worn olive-green military jacket over a white turtleneck, leather fingerless gloves, standing with back to camera, head turned over right shoulder, eyes narrowed in suspicion, wind whipping hair across face, jacket collar flapping.` |
 | 3️⃣ 空间构图 | 景别 + 主体与背景的空间位置关系 + 背景完整描述。**不涉及景深、角度、构图法则** | `Medium shot waist-up, subject positioned at left rule-of-thirds intersection, before a narrow Soviet-era alleyway with crumbling concrete walls covered in faded propaganda posters, puddles reflecting dim orange sodium-vapor streetlight, distant fog.` |
 | 4️⃣ 光线氛围 | 直接套用规则 3 格式：主光源描述 + 色温/氛围描述 + 视觉隐喻（可选，≤1个） | `Hard key light from right casting long dramatic shadows, rim light separating subject from dark background; desaturated teal-amber palette, volumetric haze filling the alley, cold isolating mood.` |

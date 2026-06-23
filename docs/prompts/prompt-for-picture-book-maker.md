@@ -66,7 +66,7 @@ Add an empty state title, explanatory text, and a prompt starter for "Start Inte
       "appearance_description": "..."
     }
   ],
-  "style_block": "[STYLE] Genre/Style Family, Medium/Texture, Line/Brushwork, Color Treatment, Quality/Format"
+  "art_style": "Genre/Style Family, Medium/Texture, Line/Brushwork, Color Treatment, Quality/Format"
 }
 ```
 For the AI copilot chat UI, you can construct it using Shadcn's component:
@@ -85,13 +85,13 @@ Scroll Area - For scrollable chat history
   - https://api-docs.deepseek.com/guides/tool_calls
 
 ### Visual & Style Section for Displaying Interview Results
-The "Visual & Style" section appears above the "Scenes" section. It has two parts: "Visual Bible" and "[STYLE] Block". The "Visual Bible" part lists out the objects in the "visual_bible" array. Each object is displayed in a card, with a thumbnail on the left, and the "id", "noun" on the right. When clicking the card, a dialog will open. On the left of the dialog, there is a large thumbnail generated from the "reference_sheet_prompt". On the right of the dialog, display the "id", "noun", "role", "reference_sheet_prompt", and "appearance_description". The "[STYLE] Block" part displays the "style_block" string in a code block. On the top right of the "Visual & Style" section, there is a "Generate Visuals" button. When clicked, it will generate the image for each characters and props entry in the "visual_bible" using the "reference_sheet_prompt", and update the thumbnail in the card with the generated image. The "Generate Visuals" button can only be clicked after the interview is done and the visual details JSON is saved in the R2 bucket.
+The "Visual & Style" section appears above the "Scenes" section. It has two parts: "Visual Bible" and "Art Style". The "Visual Bible" part lists out the objects in the "visual_bible" array. Each object is displayed in a card, with a thumbnail on the left, and the "id", "noun" on the right. When clicking the card, a dialog will open. On the left of the dialog, there is a large thumbnail generated from the "reference_sheet_prompt". On the right of the dialog, display the "id", "noun", "role", "reference_sheet_prompt", and "appearance_description". The "Art Style" part displays the "art_style" string in a code block. On the top right of the "Visual & Style" section, there is a "Generate Visuals" button. When clicked, it will generate the image for each characters and props entry in the "visual_bible" using the "reference_sheet_prompt", and update the thumbnail in the card with the generated image. The "Generate Visuals" button can only be clicked after the interview is done and the visual details JSON is saved in the R2 bucket.
 
 ### Scene Section & Scene Prompt Generation
 In the "Scenes" section, on the top right, there is a "Generate Prompts" button. When clicked, it will generate the prompt for each scene. To do this, user prompt will include: 
 - The scene list in the "Scenes" section, in the format of "Scene {scene_id}: {scene_content}"
 - The visual bible, in the format of "{id} ({noun}): {appearance_description}"
-- The style block string, in the format of "[STYLE] Genre/Style Family, Medium/Texture, Line/Brushwork, Color Treatment, Quality/Format"
+- The art style string, in the format of "Genre/Style Family, Medium/Texture, Line/Brushwork, Color Treatment, Quality/Format"
 
 The system prompt will be:
 ```
@@ -118,7 +118,7 @@ Example:
 ## Prompt Structure (6 Modules)
 Every image_prompt must follow this structure in order:
 
-1. **Style Base** — Start with the [STYLE] block provided, then add the scene's emotional tone
+1. **Style Base** — Start with the art style provided, then add the scene's emotional tone
 2. **Main Subject** — Complete appearance description of characters/props from the Visual Bible with pose, expression, and environmental interaction (wind, rain, etc.)
 3. **Spatial Composition** — Shot type (wide, medium, close-up), subject position, background complete description
 4. **Lighting & Atmosphere** — Primary light source + color temperature/mood + visual metaphor (if applicable)
@@ -162,7 +162,7 @@ Must use one of these anchoring strategies:
 3. **Emotional Composite** — Metaphor + specific light + specific color palette combo
 
 ## Important Constraints
-- Do NOT add mood words (cozy, whimsical, emotional, ominous) to the [STYLE] block itself—only to Module 1 after [STYLE]
+- Do NOT add mood words (cozy, whimsical, emotional, ominous) to the art style itself—only to Module 1 after the art style
 - Do NOT use f-stop numbers or ISO values; describe visual effects instead
 - Do NOT use "camera slowly zooms" or "pull back to reveal"—these require time
 - Always preserve exact character/prop descriptions, only adjust grammar/prepositions for flow
