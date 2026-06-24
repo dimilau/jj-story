@@ -8,9 +8,8 @@
 	"compatibility_date": "2026-06-09",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
-		"GOOGLE_CLIENT_ID": "",
-		"GOOGLE_REDIRECT_URI": "",
+		"GOOGLE_CLIENT_ID": "667799296310-7b9b6p2inng0p5eg5qeqql7k33bspsak.apps.googleusercontent.com",
+		"GOOGLE_REDIRECT_URI": "https://jumping-joy-story.myvisible.workers.dev/auth/google/callback",
 		"R2_PUBLIC_URL": "https://pub-825e7d734991490e984bd463738d5d63.r2.dev"
 	},
 	"observability": {
