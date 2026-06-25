@@ -12,7 +12,6 @@ Setup required remote services before running the application.
 1. Sign up for a DeepSeek account at "https://platform.deepseek.com"
 
 #### 🔸 Cloudflare
-* Workers & Pages > Create application > "Start with Hello World!"
 * D1 Sqlite Database > Create database > "[jumping-joy-story]"
 * R2 Object Storage > Create bucket > "[jumping-joy-story]"
     * Enable "Public Development URL": 
@@ -53,114 +52,28 @@ Note: Worker doesn't need to exist for local development, but it is required for
 
 ### ⛅️ Deploying to Cloudflare
 
-1. Workers & Pages > Create application > "Start with Hello World!" > Deploy
+1. Workers & Pages > Create application > Continue with Github > Select a repository
+    * Set up "Build command" to `pnpm build`
+    * Set up "Deploy command" to `pnpm wrangler d1 migrations apply DB --remote && pnpm wrangler deploy`
+    * Deploy
 
-2. Workers & Pages > [jumping-joy-story] > Settings:
-    * Variables and secrets: Copy the value from `.dev.vars`, in "Variables and secrets" section, click "Add", select a field, and paste the value.
-    * Build > Git repository > Connect to a repostory. Set up "Build command" to `pnpm build` and "Deploy command" to `pnpm wrangler d1 migrations apply DB --remote && pnpm wrangler deploy`.
+2. Set worker secrets, edit, upload to remote:
+    ```
+    cp secrets.json.example secrets.json
+    vim secrets.json
+    pnpm wrangler secret bulk < secrets.json
+    ```
 
+3. Assign admin role to a user by running the following command and replacing `<user@example.com>` with the user's email:
+    ```bash
+    pnpm wrangler d1 execute <database-name> --remote --command "UPDATE users SET role = 'admin' WHERE email = '<user@example.com>';"
+    ```
 
+### ⚡️ Commands
 
-Set worker secrets, edit, upload to remote:
-```
-cp secrets.json.example secrets.json
-vim secrets.json
-pnpm wrangler secret bulk < secrets.json
-```
-
-
-------------
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Previewing the Production Build
-
-Preview the production build locally:
-
-```bash
-npm run preview
-```
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-Deployment is done using the Wrangler CLI.
-
-To build and deploy directly to production:
-
-```sh
-npm run deploy
-```
-
-To deploy a preview URL:
-
-```sh
-npx wrangler versions upload
-```
-
-You can then promote a version to production after verification or roll it out progressively.
-
-```sh
-npx wrangler versions deploy
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
-## Admin Panel
-
-### Creating the First Admin User
-
-To create an admin user, use the Wrangler D1 CLI to execute a SQL update statement on your database.
-
-First, find the ID of the user you want to promote to admin. Then run:
-
-```bash
-wrangler d1 execute <database-name> --remote --file -
-```
-
-And paste the following SQL statement:
-
-```sql
-UPDATE users SET role = 'admin' WHERE id = <user-id>;
-```
-
-Replace `<user-id>` with the actual user ID (e.g., `UPDATE users SET role = 'admin' WHERE id = 1;`).
-
-Alternatively, to promote a user by email:
-
-```bash
-wrangler d1 execute <database-name> --remote --file -
-```
-
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'user@gmail.com';
-```
-
-```bash
-wrangler d1 execute <database-name> --local --command "UPDATE users SET role = 'admin' WHERE email = 'user@gmail.com';"
-
-After promoting a user to admin, they will have access to:
-- `/admin/dashboard` - Admin dashboard
-- `/admin/users` - User management interface where admins can view and edit user roles
-
----
-
-Built with ❤️ using React Router.
-
+* Start development server with HMR: `pnpm run dev`
+* Preview the production build locally: `pnpm run preview`
+* Build the production version: `pnpm run build`
+* Build and deploy directly to production: `pnpm run deploy`
+* Deploy a preview URL: `pnpm wrangler versions upload`
+* Promote a version to production after verification or roll it out progressively: `pnpm wrangler versions deploy`
