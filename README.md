@@ -49,9 +49,15 @@ Setup required remote services before running the application.
     wrangler d1 execute <database-name> --local --command "UPDATE users SET role = 'admin' WHERE email = 'user@example.com';"
     ```
 
+Note: Worker doesn't need to exist for local development, but it is required for deployment.
+
 ### ⛅️ Deploying to Cloudflare
 
-Cloudflare Dashboard > Workers > [jumping-joy-story] > Settings > Build > Variables and secrets
+1. Workers & Pages > Create application > "Start with Hello World!" > Deploy
+
+2. Workers & Pages > [jumping-joy-story] > Settings:
+    * Variables and secrets: Copy the value from `.dev.vars`, in "Variables and secrets" section, click "Add", select a field, and paste the value.
+    * Build > Git repository > Connect to a repostory. Set up "Build command" to `pnpm build` and "Deploy command" to `pnpm wrangler d1 migrations apply DB --remote && pnpm wrangler deploy`.
 
 
 
