@@ -12,6 +12,7 @@
 .wrangler
 .dev.vars*
 worker-configuration.d.ts
+secrets.json
 
 !.dev.vars.example
 !.env.example

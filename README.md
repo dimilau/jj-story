@@ -1,26 +1,69 @@
-# Welcome to React Router!
-
-A modern, production-ready template for building full-stack React applications using React Router.
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
 ## Getting Started
 
-### Installation
+### ☁️ Setup Remote Services
+Setup required remote services before running the application.
 
-Install the dependencies:
+#### 🔸 Google Cloud Project
+1. Google Cloud Console > Select a Project > New project
+2. APIs & Services > OAuth consent screen
+3. Clients > Create Client > Web application
 
-```bash
-npm install
+#### 🔸 DeepSeek API Key
+1. Sign up for a DeepSeek account at "https://platform.deepseek.com"
+
+#### 🔸 Cloudflare
+* Workers & Pages > Create application > "Start with Hello World!"
+* D1 Sqlite Database > Create database > "[jumping-joy-story]"
+* R2 Object Storage > Create bucket > "[jumping-joy-story]"
+    * Enable "Public Development URL": 
+        ```
+        Cloudflare Dashboard > R2 Object Storage > [jumping-joy-story] > General > Public Development URL > Enable
+        ```
+
+### 🖥 Local Installation
+
+1. Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <repository-directory>
+    ```
+
+1. Install the dependencies and set up the D1 database and R2 bucket:
+
+    ```bash
+    pnpm install
+    pnpm build
+    ```
+
+2. Set up local environment variables by renaming `.dev.vars.example` to `.dev.vars` and filling in the required values.
+
+3. Local database migration:
+    ```bash
+    pnpm wrangler d1 migrations apply DB --local
+    # OR
+    pnpm db:migrate:local
+    ```
+
+4. Assign admin role to a user by running the following command and replacing `<user@example.com>` with the user's email:
+    ```bash
+    wrangler d1 execute <database-name> --local --command "UPDATE users SET role = 'admin' WHERE email = 'user@example.com';"
+    ```
+
+### ⛅️ Deploying to Cloudflare
+
+Cloudflare Dashboard > Workers > [jumping-joy-story] > Settings > Build > Variables and secrets
+
+
+
+Set worker secrets, edit, upload to remote:
 ```
+cp secrets.json.example secrets.json
+vim secrets.json
+pnpm wrangler secret bulk < secrets.json
+```
+
+
+------------
 
 ### Development
 
@@ -114,3 +157,4 @@ After promoting a user to admin, they will have access to:
 ---
 
 Built with ❤️ using React Router.
+

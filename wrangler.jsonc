@@ -23,7 +23,7 @@
 		{
 			"binding": "DB",
 			"database_name": "jumping-joy-story",
-			"database_id": "DATABASE_ID_PLACEHOLDER",
+			"database_id": "85558446-5ff2-4ac1-af1c-c931955091f1",
 			"migrations_dir": "migrations"
 		}
 	],
