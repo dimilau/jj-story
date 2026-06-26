@@ -736,7 +736,7 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
   const cpEntries = (visualDetails?.visual_bible ?? []).filter(
     (v) => v.id.startsWith("C") || v.id.startsWith("P")
   );
-  const allCPImagesExist = cpEntries.every((v) => referenceSheetIds.includes(v.id));
+  const allCPImagesExist = cpEntries.length > 0 && cpEntries.every((v) => referenceSheetIds.includes(v.id));
 
   const handleGeneratePrompts = () => {
     promptsFetcher.submit(
@@ -882,7 +882,7 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
               )}
             </Button>
           )}
-          {locked && allCPImagesExist && (
+          {locked && allCPImagesExist && hasPrompts && (
             <BulkSceneImageButton
               pictureBookId={loaderData.pictureBook.id}
               sceneNums={scenes.map((_, i) => i + 1)}
