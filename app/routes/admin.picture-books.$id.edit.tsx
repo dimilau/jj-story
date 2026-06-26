@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon, ChevronDownIcon, PencilIcon } from "lucide-react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ScissorsIcon, LockIcon, SparklesIcon, CheckIcon, CopyIcon, ImageIcon, PencilIcon } from "lucide-react";
 import { env } from "cloudflare:workers";
 import VisualInterviewChat from "../components/visual-interview-chat";
 import VisualStyleSection from "../components/visual-style-section";
@@ -313,47 +312,30 @@ function PromptEditor({
 }
 
 
-function SceneImage({
+function SingleScenePromptButton({
   pictureBookId,
-  sceneNum,
-  hasImage,
-  r2PublicUrl,
+  sceneId,
+  hasPrompt,
 }: {
   pictureBookId: string;
-  sceneNum: number;
-  hasImage: boolean;
-  r2PublicUrl: string;
+  sceneId: string;
+  hasPrompt: boolean;
 }) {
-  const fetcher = useFetcher<{ scene?: number; error?: string }>();
+  const fetcher = useFetcher<{ scenePrompts?: ScenePrompt[]; error?: string }>();
   const isGenerating = fetcher.state !== "idle";
-  const [bust, setBust] = useState<number | null>(null);
-  const lastDataRef = useRef<unknown>(null);
-
-  // Cache-bust the image URL once a (re)generation completes.
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data) return;
-    if (lastDataRef.current === fetcher.data) return;
-    lastDataRef.current = fetcher.data;
-    if (fetcher.data.scene) setBust(Date.now());
-  }, [fetcher.state, fetcher.data]);
-
-  const showImage = hasImage || bust !== null;
-  const url = `${r2PublicUrl}/picture-books/${pictureBookId}/scenes/${sceneNum}.png${
-    bust ? `?t=${bust}` : ""
-  }`;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <Button
         size="sm"
         variant="outline"
         disabled={isGenerating}
         onClick={() =>
           fetcher.submit(
-            { scene: String(sceneNum) },
+            { sceneId },
             {
               method: "POST",
-              action: `/admin/picture-books/${pictureBookId}/scene-image`,
+              action: `/admin/picture-books/${pictureBookId}/prompts`,
             }
           )
         }
@@ -365,20 +347,223 @@ function SceneImage({
           </>
         ) : (
           <>
-            <ImageIcon className="h-4 w-4 mr-1" />
-            {showImage ? "Regenerate Image" : "Generate Image"}
+            <SparklesIcon className="h-4 w-4 mr-1" />
+            {hasPrompt ? "Regenerate Prompt" : "Generate Prompt"}
           </>
         )}
       </Button>
       {fetcher.data?.error && (
         <p className="text-destructive text-sm">{fetcher.data.error}</p>
       )}
-      {showImage && (
-        <img
-          src={url}
-          alt={`Scene ${sceneNum}`}
-          className="rounded-lg border border-border max-w-md w-full"
-        />
+    </div>
+  );
+}
+
+function BulkSceneImageButton({
+  pictureBookId,
+  sceneNums,
+}: {
+  pictureBookId: string;
+  sceneNums: number[];
+}) {
+  const fetcher = useFetcher<{ scene?: number; error?: string }>();
+  const queueRef = useRef<number[]>([]);
+  const totalRef = useRef(0);
+  const prevStateRef = useRef(fetcher.state);
+  const [isRunning, setIsRunning] = useState(false);
+  const [completed, setCompleted] = useState(0);
+
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    prevStateRef.current = fetcher.state;
+    if (prev !== "idle" && fetcher.state === "idle" && isRunning) {
+      const next = queueRef.current.shift();
+      setCompleted((c) => c + 1);
+      if (next === undefined) {
+        setIsRunning(false);
+      } else {
+        fetcher.submit(
+          { scene: String(next) },
+          { method: "POST", action: `/admin/picture-books/${pictureBookId}/scene-image` }
+        );
+      }
+    }
+  }, [fetcher.state, isRunning, pictureBookId]);
+
+  const handleStart = () => {
+    if (sceneNums.length === 0) return;
+    const [first, ...rest] = sceneNums;
+    queueRef.current = [...rest];
+    totalRef.current = sceneNums.length;
+    setCompleted(0);
+    setIsRunning(true);
+    fetcher.submit(
+      { scene: String(first) },
+      { method: "POST", action: `/admin/picture-books/${pictureBookId}/scene-image` }
+    );
+  };
+
+  const isBusy = isRunning || fetcher.state !== "idle";
+
+  return (
+    <div className="space-y-1">
+      <Button size="sm" onClick={handleStart} disabled={isBusy}>
+        {isBusy ? (
+          <>
+            <Spinner data-icon="inline-start" />
+            {completed + 1}/{totalRef.current}...
+          </>
+        ) : (
+          <>
+            <ImageIcon className="h-4 w-4 mr-1" />
+            Generate Images
+          </>
+        )}
+      </Button>
+      {fetcher.data?.error && (
+        <p className="text-destructive text-sm">{fetcher.data.error}</p>
+      )}
+    </div>
+  );
+}
+
+type SceneCardProps = {
+  scene: Scene;
+  index: number;
+  locked: boolean;
+  visualDetails: import("../lib/picture-book-prompts.server").VisualDetails | null;
+  allCPImagesExist: boolean;
+  prompt: import("../lib/picture-book-prompts.server").ScenePrompt | undefined;
+  hasImageInitially: boolean;
+  pictureBookId: string;
+  r2PublicUrl: string;
+  nounById: Map<string, string>;
+  onSplit: (pos: number) => void;
+  onMergeWithPrevious: () => void;
+};
+
+function SceneCard({
+  scene,
+  index,
+  locked,
+  visualDetails,
+  allCPImagesExist,
+  prompt,
+  hasImageInitially,
+  pictureBookId,
+  r2PublicUrl,
+  nounById,
+  onSplit,
+  onMergeWithPrevious,
+}: SceneCardProps) {
+  const imageFetcher = useFetcher<{ scene?: number; error?: string }>();
+  const [imageBust, setImageBust] = useState<number | null>(null);
+  const lastDataRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    if (imageFetcher.state !== "idle" || !imageFetcher.data) return;
+    if (lastDataRef.current === imageFetcher.data) return;
+    lastDataRef.current = imageFetcher.data;
+    if (imageFetcher.data.scene) setImageBust(Date.now());
+  }, [imageFetcher.state, imageFetcher.data]);
+
+  const sceneNum = index + 1;
+  const isGeneratingImage = imageFetcher.state !== "idle";
+  const showImage = hasImageInitially || imageBust !== null;
+  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/scenes/${sceneNum}.png${
+    imageBust ? `?t=${imageBust}` : ""
+  }`;
+
+  const showGeneratePrompt = locked && !!visualDetails;
+  const showGenerateImage = locked && allCPImagesExist && !!prompt;
+
+  return (
+    <div className="border border-border rounded-lg p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Scene {sceneNum}
+        </span>
+        {!locked && index > 0 && (
+          <Button variant="outline" size="sm" onClick={onMergeWithPrevious}>
+            Merge with previous
+          </Button>
+        )}
+      </div>
+
+      <SceneContent
+        content={scene.scene_content}
+        onSplit={onSplit}
+        disabled={locked}
+      />
+
+      {(showGeneratePrompt || showGenerateImage) && (
+        <div className="flex gap-2 mt-3">
+          {showGeneratePrompt && (
+            <SingleScenePromptButton
+              pictureBookId={pictureBookId}
+              sceneId={scene.scene_id}
+              hasPrompt={!!prompt}
+            />
+          )}
+          {showGenerateImage && (
+            <div className="space-y-1">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isGeneratingImage}
+                onClick={() =>
+                  imageFetcher.submit(
+                    { scene: String(sceneNum) },
+                    { method: "POST", action: `/admin/picture-books/${pictureBookId}/scene-image` }
+                  )
+                }
+              >
+                {isGeneratingImage ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="h-4 w-4 mr-1" />
+                    {showImage ? "Regenerate Image" : "Generate Image"}
+                  </>
+                )}
+              </Button>
+              {imageFetcher.data?.error && (
+                <p className="text-destructive text-sm">{imageFetcher.data.error}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {prompt && (
+        <div className="mt-4 border-t border-border pt-3 space-y-3">
+          <PromptEditor
+            pictureBookId={pictureBookId}
+            sceneId={prompt.scene_id}
+            initialPrompt={prompt.image_prompt}
+          />
+
+          {prompt.reference_images.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {prompt.reference_images.map((id, i) => (
+                <Badge key={id} variant="secondary">
+                  Image {i}: {id} ({nounById.get(id) ?? "?"})
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {showImage && (
+            <img
+              src={imageUrl}
+              alt={`Scene ${sceneNum}`}
+              className="rounded-lg border border-border max-w-md w-full"
+            />
+          )}
+        </div>
       )}
     </div>
   );
@@ -496,6 +681,11 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
   const hasPrompts = (scenePrompts?.length ?? 0) > 0;
   const isGeneratingPrompts = promptsFetcher.state !== "idle";
 
+  const cpEntries = (visualDetails?.visual_bible ?? []).filter(
+    (v) => v.id.startsWith("C") || v.id.startsWith("P")
+  );
+  const allCPImagesExist = cpEntries.every((v) => referenceSheetIds.includes(v.id));
+
   const handleGeneratePrompts = () => {
     promptsFetcher.submit(
       {},
@@ -571,36 +761,36 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Scenes</h3>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUndo}
-            disabled={locked || history.length === 0}
-          >
-            Undo
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            disabled={locked || scenes === originalScenes}
-          >
-            Reset
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={locked || isSaving}
-          >
-            {isSaving && !lockIntent ? (
-              <>
-                <Spinner data-icon="inline-start" />
-                Saving...
-              </>
-            ) : (
-              "Save"
-            )}
-          </Button>
+          {!locked && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUndo}
+                disabled={history.length === 0}
+              >
+                Undo
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+                disabled={scenes === originalScenes}
+              >
+                Reset
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving && !lockIntent ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </>
+          )}
           <Button
             size="sm"
             variant={locked ? "secondary" : "default"}
@@ -621,34 +811,30 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
               "Save & Lock"
             )}
           </Button>
-          {locked && (
+          {locked && visualDetails && (
             <Button
               size="sm"
               onClick={handleGeneratePrompts}
-              disabled={!visualDetails || isGeneratingPrompts}
-              title={
-                !visualDetails
-                  ? "Complete the visual interview first"
-                  : undefined
-              }
+              disabled={isGeneratingPrompts}
             >
               {isGeneratingPrompts ? (
                 <>
                   <Spinner data-icon="inline-start" />
                   Generating...
                 </>
-              ) : hasPrompts ? (
-                <>
-                  <SparklesIcon className="h-4 w-4 mr-1" />
-                  Regenerate Prompts
-                </>
               ) : (
                 <>
                   <SparklesIcon className="h-4 w-4 mr-1" />
-                  Generate Prompts
+                  {hasPrompts ? "Regenerate Prompts" : "Generate Prompts"}
                 </>
               )}
             </Button>
+          )}
+          {locked && allCPImagesExist && (
+            <BulkSceneImageButton
+              pictureBookId={loaderData.pictureBook.id}
+              sceneNums={scenes.map((_, i) => i + 1)}
+            />
           )}
         </div>
       </div>
@@ -673,67 +859,21 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
 
       <div className="space-y-4">
         {scenes.map((scene, index) => (
-          <div
+          <SceneCard
             key={scene.scene_id}
-            className="border border-border rounded-lg p-4"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Scene {index + 1}
-              </span>
-              {!locked && index > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleMergeWithPrevious(index)}
-                >
-                  Merge with previous
-                </Button>
-              )}
-            </div>
-            <SceneContent
-              content={scene.scene_content}
-              onSplit={(pos) => handleSplit(index, pos)}
-              disabled={locked}
-            />
-
-            {(() => {
-              const prompt = promptByScene.get(index + 1);
-              if (!prompt) return null;
-              return (
-                <Collapsible className="mt-4 border-t border-border pt-3">
-                  <CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
-                    <span>Scene Prompt &amp; Images</span>
-                    <ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-3 space-y-3">
-                    <PromptEditor
-                      pictureBookId={loaderData.pictureBook.id}
-                      sceneId={prompt.scene_id}
-                      initialPrompt={prompt.image_prompt}
-                    />
-
-                    {prompt.reference_images.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {prompt.reference_images.map((id, i) => (
-                          <Badge key={id} variant="secondary">
-                            Image {i}: {id} ({nounById.get(id) ?? "?"})
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    <SceneImage
-                      pictureBookId={loaderData.pictureBook.id}
-                      sceneNum={index + 1}
-                      hasImage={sceneImageSet.has(index + 1)}
-                      r2PublicUrl={r2PublicUrl}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })()}
-          </div>
+            scene={scene}
+            index={index}
+            locked={locked}
+            visualDetails={visualDetails}
+            allCPImagesExist={allCPImagesExist}
+            prompt={promptByScene.get(index + 1)}
+            hasImageInitially={sceneImageSet.has(index + 1)}
+            pictureBookId={loaderData.pictureBook.id}
+            r2PublicUrl={r2PublicUrl}
+            nounById={nounById}
+            onSplit={(pos) => handleSplit(index, pos)}
+            onMergeWithPrevious={() => handleMergeWithPrevious(index)}
+          />
         ))}
       </div>
     </div>

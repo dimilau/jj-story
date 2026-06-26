@@ -24,6 +24,9 @@ export async function action({ request, params }: Route.ActionArgs) {
     return Response.json({ error: "Missing picture book ID" }, { status: 400 });
   }
 
+  const formData = await request.formData();
+  const sceneId = (formData.get("sceneId") as string | null) || null;
+
   const db = getDb();
   const [pictureBook] = await db
     .select()
@@ -34,9 +37,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const scenesObject = await env.BUCKET.get(pictureBook.r2Key);
-  const scenes: Scene[] = scenesObject
+  const allScenes: Scene[] = scenesObject
     ? JSON.parse(await scenesObject.text())
     : [];
+
+  if (sceneId && !allScenes.some((s) => s.scene_id === sceneId)) {
+    return Response.json({ error: `Scene ${sceneId} not found` }, { status: 400 });
+  }
 
   const visualDetailsObject = await env.BUCKET.get(
     `picture-books/${pictureBookId}/visual-details.json`
@@ -51,7 +58,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     await visualDetailsObject.text()
   );
 
-  const userMessage = buildScenePromptsUserMessage(scenes, visualDetails);
+  const userMessage = sceneId
+    ? buildScenePromptsUserMessage(allScenes, visualDetails) +
+      `\n\nGenerate a prompt for Scene ${sceneId} only. Return a JSON array with exactly one entry.`
+    : buildScenePromptsUserMessage(allScenes, visualDetails);
 
   const openai = new OpenAI({
     baseURL: "https://api.deepseek.com",
@@ -81,14 +91,35 @@ export async function action({ request, params }: Route.ActionArgs) {
     .replace(/\s*```$/, "")
     .trim();
 
-  let scenePrompts: ScenePrompt[];
+  let newPrompts: ScenePrompt[];
   try {
-    scenePrompts = JSON.parse(cleanJson);
+    newPrompts = JSON.parse(cleanJson);
   } catch {
     return Response.json(
       { error: "Failed to parse scene prompts from AI response" },
       { status: 502 }
     );
+  }
+
+  let scenePrompts: ScenePrompt[];
+  if (sceneId) {
+    const existingObject = await env.BUCKET.get(
+      `picture-books/${pictureBookId}/scene-prompts.json`
+    );
+    const existing: ScenePrompt[] = existingObject
+      ? JSON.parse(await existingObject.text())
+      : [];
+    const generated = newPrompts[0];
+    const idx = existing.findIndex((p) => p.scene_id === sceneId);
+    if (idx >= 0) {
+      existing[idx] = generated;
+    } else {
+      existing.push(generated);
+      existing.sort((a, b) => Number(a.scene_id) - Number(b.scene_id));
+    }
+    scenePrompts = existing;
+  } else {
+    scenePrompts = newPrompts;
   }
 
   await env.BUCKET.put(
