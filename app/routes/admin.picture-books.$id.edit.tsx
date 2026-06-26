@@ -140,7 +140,16 @@ export async function action({ request, params }: Route.ActionArgs) {
     const index = scenePrompts.findIndex((p) => p.scene_id === sceneId);
     if (index === -1) return { error: `No prompt found for scene ${sceneId}` };
 
-    scenePrompts[index] = { ...scenePrompts[index], image_prompt: imagePrompt };
+    const referenceImagesRaw = formData.get("referenceImages") as string | null;
+    const referenceImages: string[] | undefined = referenceImagesRaw
+      ? JSON.parse(referenceImagesRaw)
+      : undefined;
+
+    scenePrompts[index] = {
+      ...scenePrompts[index],
+      image_prompt: imagePrompt,
+      ...(referenceImages !== undefined && { reference_images: referenceImages }),
+    };
     await env.BUCKET.put(key, JSON.stringify(scenePrompts));
 
     return { success: true };
@@ -223,89 +232,146 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function PromptEditor({
+function PromptSection({
   pictureBookId,
   sceneId,
   initialPrompt,
+  initialReferenceImages,
+  nounById,
+  showImage,
+  imageUrl,
 }: {
   pictureBookId: string;
   sceneId: string;
   initialPrompt: string;
+  initialReferenceImages: string[];
+  nounById: Map<string, string>;
+  showImage: boolean;
+  imageUrl: string;
 }) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(initialPrompt);
+  const [promptText, setPromptText] = useState(initialPrompt);
+  const [refText, setRefText] = useState(initialReferenceImages.join(", "));
   const isSaving = fetcher.state !== "idle";
 
-  // Stay in sync with the saved prompt: a successful edit revalidates the
-  // loader with the new text, and this also covers reverting after a
-  // failed save (the stored prompt, and thus initialPrompt, is unchanged).
   useEffect(() => {
-    if (!editing) setText(initialPrompt);
-  }, [initialPrompt, editing]);
+    if (!editing) {
+      setPromptText(initialPrompt);
+      setRefText(initialReferenceImages.join(", "));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, initialReferenceImages.join(","), editing]);
 
   const handleSave = () => {
-    const trimmed = text.trim();
-    if (!trimmed || trimmed === initialPrompt) {
-      setText(initialPrompt);
-      setEditing(false);
+    const trimmed = promptText.trim();
+    if (!trimmed) {
+      handleCancel();
       return;
     }
+    const parsedRefs = refText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     fetcher.submit(
-      { intent: "update-prompt", sceneId, imagePrompt: trimmed },
+      {
+        intent: "update-prompt",
+        sceneId,
+        imagePrompt: trimmed,
+        referenceImages: JSON.stringify(parsedRefs),
+      },
       { method: "POST", action: `/admin/picture-books/${pictureBookId}/edit` }
     );
     setEditing(false);
   };
 
+  const handleCancel = () => {
+    setPromptText(initialPrompt);
+    setRefText(initialReferenceImages.join(", "));
+    setEditing(false);
+  };
+
   if (editing) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <textarea
           autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={promptText}
+          onChange={(e) => setPromptText(e.target.value)}
           rows={8}
           className="w-full rounded-lg border border-border bg-muted/50 p-3 text-xs font-mono whitespace-pre-wrap resize-y focus:outline-none focus:ring-2 focus:ring-ring"
         />
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">
+            Reference image IDs (comma-separated)
+          </label>
+          <Input
+            value={refText}
+            onChange={(e) => setRefText(e.target.value)}
+            placeholder="C1, P1, C2"
+            className="text-xs font-mono"
+          />
+        </div>
         <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setText(initialPrompt);
-              setEditing(false);
-            }}
-          >
+          <Button variant="outline" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button size="sm" onClick={handleSave}>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
             Save
           </Button>
         </div>
+        {showImage && (
+          <img
+            src={imageUrl}
+            alt="Scene"
+            className="rounded-lg border border-border max-w-md w-full"
+          />
+        )}
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
-        {text}
-      </pre>
-      <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5">
-        <CopyButton text={text} />
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setEditing(true)}
-          disabled={isSaving}
-          aria-label="Edit prompt"
-        >
-          <PencilIcon className="h-3.5 w-3.5" />
-        </Button>
+    <div className="space-y-3">
+      <div className="relative">
+        <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
+          {promptText}
+        </pre>
+        <div className="absolute top-1.5 right-1.5">
+          <CopyButton text={promptText} />
+        </div>
       </div>
+
+      {initialReferenceImages.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {initialReferenceImages.map((id, i) => (
+            <Badge key={id} variant="secondary">
+              Image {i}: {id} ({nounById.get(id) ?? "?"})
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setEditing(true)}
+        disabled={isSaving}
+      >
+        <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+        Edit Prompt
+      </Button>
+
       {fetcher.data?.error && (
-        <p className="text-destructive text-sm mt-2">{fetcher.data.error}</p>
+        <p className="text-destructive text-sm">{fetcher.data.error}</p>
+      )}
+
+      {showImage && (
+        <img
+          src={imageUrl}
+          alt="Scene"
+          className="rounded-lg border border-border max-w-md w-full"
+        />
       )}
     </div>
   );
@@ -539,30 +605,16 @@ function SceneCard({
       )}
 
       {prompt && (
-        <div className="mt-4 border-t border-border pt-3 space-y-3">
-          <PromptEditor
+        <div className="mt-4 border-t border-border pt-3">
+          <PromptSection
             pictureBookId={pictureBookId}
             sceneId={prompt.scene_id}
             initialPrompt={prompt.image_prompt}
+            initialReferenceImages={prompt.reference_images}
+            nounById={nounById}
+            showImage={showImage}
+            imageUrl={imageUrl}
           />
-
-          {prompt.reference_images.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {prompt.reference_images.map((id, i) => (
-                <Badge key={id} variant="secondary">
-                  Image {i}: {id} ({nounById.get(id) ?? "?"})
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {showImage && (
-            <img
-              src={imageUrl}
-              alt={`Scene ${sceneNum}`}
-              className="rounded-lg border border-border max-w-md w-full"
-            />
-          )}
         </div>
       )}
     </div>
