@@ -66,10 +66,20 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
   }
 
+  const extraPromptObject = await env.BUCKET.get(
+    `picture-books/${pictureBookId}/extra-prompt.txt`
+  );
+  const extraPrompt = extraPromptObject
+    ? (await extraPromptObject.text()).trim()
+    : "";
+  const finalPrompt = extraPrompt
+    ? `${prompt.image_prompt} ${extraPrompt}`
+    : prompt.image_prompt;
+
   let bytes: Uint8Array;
   try {
     bytes = await generateFluxImage({
-      prompt: prompt.image_prompt,
+      prompt: finalPrompt,
       width: 1024,
       height: 768,
       inputImages,

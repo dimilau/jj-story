@@ -58,6 +58,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     ? JSON.parse(await scenePromptsObject.text())
     : null;
 
+  const extraPromptObject = await env.BUCKET.get(
+    `picture-books/${pictureBookId}/extra-prompt.txt`
+  );
+  const extraPrompt: string = extraPromptObject
+    ? await extraPromptObject.text()
+    : "";
+
   // IDs of reference sheets that have actually been generated, so the UI only
   // links to images that exist (otherwise show a placeholder).
   const refSheetList = await env.BUCKET.list({
@@ -83,6 +90,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     locked: pictureBook.locked,
     visualDetails,
     scenePrompts,
+    extraPrompt,
     referenceSheetIds,
     sceneImageNumbers,
     r2PublicUrl: env.R2_PUBLIC_URL,
@@ -125,6 +133,15 @@ export async function action({ request, params }: Route.ActionArgs) {
       .where(eq(pictureBooks.id, params.id!));
 
     return { success: true, title };
+  }
+
+  if (intent === "save-extra-prompt") {
+    const extraPrompt = (formData.get("extraPrompt") as string) ?? "";
+    await env.BUCKET.put(
+      `picture-books/${params.id}/extra-prompt.txt`,
+      extraPrompt.trim()
+    );
+    return { success: true };
   }
 
   if (intent === "update-prompt") {
@@ -377,6 +394,70 @@ function PromptSection({
   );
 }
 
+
+function ExtraPromptEditor({
+  pictureBookId,
+  initialValue,
+}: {
+  pictureBookId: string;
+  initialValue: string;
+}) {
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const [value, setValue] = useState(initialValue);
+  const isSaving = fetcher.state !== "idle";
+  const isDirty = value !== initialValue;
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const handleSave = () => {
+    fetcher.submit(
+      { intent: "save-extra-prompt", extraPrompt: value },
+      { method: "POST", action: `/admin/picture-books/${pictureBookId}/edit` }
+    );
+  };
+
+  return (
+    <div className="border border-border rounded-lg p-4 mb-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">Extra Prompt</label>
+        <span className="text-xs text-muted-foreground">
+          Appended to every scene&apos;s image prompt at generation time
+        </span>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={3}
+        placeholder="e.g. Thin uneven watercolor to paper texture at the edge. A tiny rubber ducky showing at random places."
+        className="w-full rounded-lg border border-border bg-muted/50 p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={isSaving || !isDirty}
+        >
+          {isSaving ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              Saving...
+            </>
+          ) : (
+            "Save"
+          )}
+        </Button>
+        {fetcher.data?.error && (
+          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+        )}
+        {fetcher.data?.success && !isSaving && (
+          <p className="text-green-600 text-sm">Saved.</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function SingleScenePromptButton({
   pictureBookId,
@@ -707,6 +788,7 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
     locked,
     visualDetails,
     scenePrompts,
+    extraPrompt,
     referenceSheetIds,
     sceneImageNumbers,
     r2PublicUrl,
@@ -907,6 +989,13 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
         <div className="text-destructive text-sm p-3 border border-destructive/50 rounded-lg bg-destructive/10 mb-4">
           Error: {saveFetcher.data.error}
         </div>
+      )}
+
+      {locked && (
+        <ExtraPromptEditor
+          pictureBookId={loaderData.pictureBook.id}
+          initialValue={extraPrompt}
+        />
       )}
 
       <div className="space-y-4">
