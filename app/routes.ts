@@ -19,4 +19,6 @@ export default [
   route("admin/picture-books/:id/prompts", "routes/admin.picture-books.$id.prompts.tsx"),
   route("admin/picture-books/:id/visuals", "routes/admin.picture-books.$id.visuals.tsx"),
   route("admin/picture-books/:id/scene-image", "routes/admin.picture-books.$id.scene-image.tsx"),
+  route("admin/picture-books/:id/cover-image-prompt", "routes/admin.picture-books.$id.cover-image-prompt.tsx"),
+  route("admin/picture-books/:id/cover-image", "routes/admin.picture-books.$id.cover-image.tsx"),
 ] satisfies RouteConfig;

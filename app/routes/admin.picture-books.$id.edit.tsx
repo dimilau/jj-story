@@ -15,6 +15,7 @@ import { env } from "cloudflare:workers";
 import VisualInterviewChat from "../components/visual-interview-chat";
 import VisualStyleSection from "../components/visual-style-section";
 import type { VisualDetails, ScenePrompt } from "../lib/picture-book-prompts.server";
+import type { CoverImagePrompt } from "./admin.picture-books.$id.cover-image-prompt";
 
 type Scene = {
   scene_id: string;
@@ -82,6 +83,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     Number(o.key.split("/").pop()!.replace(/\.png$/, ""))
   );
 
+  const coverImagePromptObject = await env.BUCKET.get(
+    `picture-books/${pictureBookId}/cover-image-prompt.json`
+  );
+  const coverImagePrompt: CoverImagePrompt | null = coverImagePromptObject
+    ? JSON.parse(await coverImagePromptObject.text())
+    : null;
+
+  const coverImageObject = await env.BUCKET.head(
+    `picture-books/${pictureBookId}/cover.png`
+  );
+  const hasCoverImage = coverImageObject !== null;
+
   return {
     user,
     story,
@@ -93,6 +106,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     extraPrompt,
     referenceSheetIds,
     sceneImageNumbers,
+    coverImagePrompt,
+    hasCoverImage,
     r2PublicUrl: env.R2_PUBLIC_URL,
   };
 }
@@ -169,6 +184,23 @@ export async function action({ request, params }: Route.ActionArgs) {
     };
     await env.BUCKET.put(key, JSON.stringify(scenePrompts));
 
+    return { success: true };
+  }
+
+  if (intent === "update-cover-prompt") {
+    const imagePrompt = (formData.get("imagePrompt") as string)?.trim();
+    if (!imagePrompt) return { error: "Missing prompt text" };
+
+    const referenceImagesRaw = formData.get("referenceImages") as string | null;
+    const referenceImages: string[] = referenceImagesRaw
+      ? JSON.parse(referenceImagesRaw)
+      : [];
+
+    const coverPrompt: CoverImagePrompt = { prompt: imagePrompt, reference_images: referenceImages };
+    await env.BUCKET.put(
+      `picture-books/${params.id}/cover-image-prompt.json`,
+      JSON.stringify(coverPrompt)
+    );
     return { success: true };
   }
 
@@ -394,6 +426,237 @@ function PromptSection({
   );
 }
 
+
+function CoverImageSection({
+  pictureBookId,
+  initialPrompt,
+  initialReferenceImages,
+  nounById,
+  hasImageInitially,
+  r2PublicUrl,
+  allCPImagesExist,
+}: {
+  pictureBookId: string;
+  initialPrompt: string | null;
+  initialReferenceImages: string[];
+  nounById: Map<string, string>;
+  hasImageInitially: boolean;
+  r2PublicUrl: string;
+  allCPImagesExist: boolean;
+}) {
+  const promptFetcher = useFetcher<{ coverImagePrompt?: CoverImagePrompt; error?: string }>();
+  const imageFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const saveFetcher = useFetcher<{ success?: boolean; error?: string }>();
+
+  const [editing, setEditing] = useState(false);
+  const [promptText, setPromptText] = useState(initialPrompt ?? "");
+  const [refText, setRefText] = useState(initialReferenceImages.join(", "));
+  const [imageBust, setImageBust] = useState<number | null>(null);
+  const lastImageDataRef = useRef<unknown>(null);
+
+  const isGeneratingPrompt = promptFetcher.state !== "idle";
+  const isGeneratingImage = imageFetcher.state !== "idle";
+  const isSaving = saveFetcher.state !== "idle";
+
+  // When a new prompt is generated, sync it into local state.
+  useEffect(() => {
+    if (promptFetcher.data?.coverImagePrompt) {
+      setPromptText(promptFetcher.data.coverImagePrompt.prompt);
+      setRefText(promptFetcher.data.coverImagePrompt.reference_images.join(", "));
+    }
+  }, [promptFetcher.data]);
+
+  // When a new image is generated, bust the cache.
+  useEffect(() => {
+    if (imageFetcher.state !== "idle" || !imageFetcher.data) return;
+    if (lastImageDataRef.current === imageFetcher.data) return;
+    lastImageDataRef.current = imageFetcher.data;
+    if (imageFetcher.data.success) setImageBust(Date.now());
+  }, [imageFetcher.state, imageFetcher.data]);
+
+  // Sync prop changes to local state when not editing.
+  useEffect(() => {
+    if (!editing) {
+      setPromptText(initialPrompt ?? "");
+      setRefText(initialReferenceImages.join(", "));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, initialReferenceImages.join(","), editing]);
+
+  const currentPrompt = promptText || initialPrompt;
+  const currentRefs = refText
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const showImage = hasImageInitially || imageBust !== null;
+  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/cover.png${
+    imageBust ? `?t=${imageBust}` : ""
+  }`;
+
+  const handleSavePrompt = () => {
+    const trimmed = promptText.trim();
+    if (!trimmed) { setEditing(false); return; }
+    const parsedRefs = refText.split(",").map((s) => s.trim()).filter(Boolean);
+    saveFetcher.submit(
+      {
+        intent: "update-cover-prompt",
+        imagePrompt: trimmed,
+        referenceImages: JSON.stringify(parsedRefs),
+      },
+      { method: "POST", action: `/admin/picture-books/${pictureBookId}/edit` }
+    );
+    setEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setPromptText(initialPrompt ?? "");
+    setRefText(initialReferenceImages.join(", "));
+    setEditing(false);
+  };
+
+  return (
+    <div className="border border-border rounded-lg p-4 mb-4 space-y-4">
+      <h3 className="text-sm font-semibold">Cover Image</h3>
+
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isGeneratingPrompt}
+          onClick={() =>
+            promptFetcher.submit(
+              {},
+              { method: "POST", action: `/admin/picture-books/${pictureBookId}/cover-image-prompt` }
+            )
+          }
+        >
+          {isGeneratingPrompt ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="h-4 w-4 mr-1" />
+              {currentPrompt ? "Regenerate Prompt" : "Generate Prompt"}
+            </>
+          )}
+        </Button>
+
+        {currentPrompt && allCPImagesExist && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isGeneratingImage}
+            onClick={() =>
+              imageFetcher.submit(
+                {},
+                { method: "POST", action: `/admin/picture-books/${pictureBookId}/cover-image` }
+              )
+            }
+          >
+            {isGeneratingImage ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <ImageIcon className="h-4 w-4 mr-1" />
+                {showImage ? "Regenerate Image" : "Generate Image"}
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+
+      {promptFetcher.data?.error && (
+        <p className="text-destructive text-sm">{promptFetcher.data.error}</p>
+      )}
+      {imageFetcher.data?.error && (
+        <p className="text-destructive text-sm">{imageFetcher.data.error}</p>
+      )}
+      {saveFetcher.data?.error && (
+        <p className="text-destructive text-sm">{saveFetcher.data.error}</p>
+      )}
+
+      {currentPrompt && (
+        <>
+          {editing ? (
+            <div className="space-y-3">
+              <textarea
+                autoFocus
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+                rows={8}
+                className="w-full rounded-lg border border-border bg-muted/50 p-3 text-xs font-mono whitespace-pre-wrap resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">
+                  Reference image IDs (comma-separated)
+                </label>
+                <Input
+                  value={refText}
+                  onChange={(e) => setRefText(e.target.value)}
+                  placeholder="C1, P1, C2"
+                  className="text-xs font-mono"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSavePrompt} disabled={isSaving}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="relative">
+                <pre className="rounded-lg border border-border bg-muted/50 p-3 pr-10 text-xs whitespace-pre-wrap break-words font-mono">
+                  {promptText}
+                </pre>
+                <div className="absolute top-1.5 right-1.5">
+                  <CopyButton text={promptText} />
+                </div>
+              </div>
+
+              {currentRefs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {currentRefs.map((id, i) => (
+                    <Badge key={id} variant="secondary">
+                      Image {i}: {id} ({nounById.get(id) ?? "?"})
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(true)}
+                disabled={isSaving}
+              >
+                <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                Edit Prompt
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      {showImage && (
+        <img
+          src={imageUrl}
+          alt="Cover"
+          className="rounded-lg border border-border max-w-xs w-full"
+        />
+      )}
+    </div>
+  );
+}
 
 function ExtraPromptEditor({
   pictureBookId,
@@ -791,6 +1054,8 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
     extraPrompt,
     referenceSheetIds,
     sceneImageNumbers,
+    coverImagePrompt,
+    hasCoverImage,
     r2PublicUrl,
   } = loaderData;
   const sceneImageSet = new Set(sceneImageNumbers);
@@ -1040,6 +1305,17 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
                   pictureBookId={loaderData.pictureBook.id}
                   r2PublicUrl={r2PublicUrl}
                   referenceSheetIds={referenceSheetIds}
+                />
+              )}
+              {visualDetails && (
+                <CoverImageSection
+                  pictureBookId={loaderData.pictureBook.id}
+                  initialPrompt={coverImagePrompt?.prompt ?? null}
+                  initialReferenceImages={coverImagePrompt?.reference_images ?? []}
+                  nounById={nounById}
+                  hasImageInitially={hasCoverImage}
+                  r2PublicUrl={r2PublicUrl}
+                  allCPImagesExist={allCPImagesExist}
                 />
               )}
               {scenesSection}
