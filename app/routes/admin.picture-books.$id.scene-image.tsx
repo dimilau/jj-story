@@ -59,7 +59,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const inputImages: Uint8Array[] = [];
   for (const id of prompt.reference_images.slice(0, 4)) {
     const sheet = await env.BUCKET.get(
-      `picture-books/${pictureBookId}/reference-sheets/${id}.png`
+      `picture-books/${pictureBookId}/reference-sheets/${id}.webp`
     );
     if (sheet) {
       inputImages.push(new Uint8Array(await sheet.arrayBuffer()));
@@ -92,9 +92,9 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   await env.BUCKET.put(
-    `picture-books/${pictureBookId}/scenes/${sceneNum}.png`,
+    `picture-books/${pictureBookId}/scenes/${sceneNum}.webp`,
     bytes,
-    { httpMetadata: { contentType: "image/png" } }
+    { httpMetadata: { contentType: "image/webp" } }
   );
 
   return Response.json({ scene: sceneNum });

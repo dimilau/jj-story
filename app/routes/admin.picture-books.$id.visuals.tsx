@@ -60,9 +60,9 @@ export async function action({ request, params }: Route.ActionArgs) {
         height: REF_SHEET_SIZE,
       });
       await env.BUCKET.put(
-        `picture-books/${pictureBookId}/reference-sheets/${entry.id}.png`,
+        `picture-books/${pictureBookId}/reference-sheets/${entry.id}.webp`,
         bytes,
-        { httpMetadata: { contentType: "image/png" } }
+        { httpMetadata: { contentType: "image/webp" } }
       );
       generated.push(entry.id);
     } catch (err) {

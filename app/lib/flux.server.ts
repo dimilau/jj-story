@@ -25,7 +25,7 @@ export async function generateFluxImage({
   prompt: string;
   width?: number;
   height?: number;
-  /** Up to 4 reference images (each must be <=512x512), as PNG bytes. */
+  /** Up to 4 reference images (each must be <=512x512), as WebP bytes. */
   inputImages?: Uint8Array[];
 }): Promise<Uint8Array> {
   const form = new FormData();
@@ -36,8 +36,8 @@ export async function generateFluxImage({
   inputImages.slice(0, 4).forEach((bytes, i) => {
     form.append(
       `input_image_${i}`,
-      new Blob([bytes as BlobPart], { type: "image/png" }),
-      `input_${i}.png`
+      new Blob([bytes as BlobPart], { type: "image/webp" }),
+      `input_${i}.webp`
     );
   });
 

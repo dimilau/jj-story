@@ -19,7 +19,7 @@ function referenceSheetUrl(
   pictureBookId: string,
   vbId: string
 ) {
-  return `${r2PublicUrl}/picture-books/${pictureBookId}/reference-sheets/${vbId}.png`;
+  return `${r2PublicUrl}/picture-books/${pictureBookId}/reference-sheets/${vbId}.webp`;
 }
 
 function Thumbnail({

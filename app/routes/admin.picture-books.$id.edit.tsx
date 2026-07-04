@@ -72,7 +72,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     prefix: `picture-books/${pictureBookId}/reference-sheets/`,
   });
   const referenceSheetIds = refSheetList.objects.map((o) =>
-    o.key.split("/").pop()!.replace(/\.png$/, "")
+    o.key.split("/").pop()!.replace(/\.webp$/, "")
   );
 
   // Scene numbers that already have a generated image.
@@ -80,7 +80,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     prefix: `picture-books/${pictureBookId}/scenes/`,
   });
   const sceneImageNumbers = sceneImageList.objects.map((o) =>
-    Number(o.key.split("/").pop()!.replace(/\.png$/, ""))
+    Number(o.key.split("/").pop()!.replace(/\.webp$/, ""))
   );
 
   const coverImagePromptObject = await env.BUCKET.get(
@@ -91,7 +91,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     : null;
 
   const coverImageObject = await env.BUCKET.head(
-    `picture-books/${pictureBookId}/cover.png`
+    `picture-books/${pictureBookId}/cover.webp`
   );
   const hasCoverImage = coverImageObject !== null;
 
@@ -490,7 +490,7 @@ function CoverImageSection({
     .filter(Boolean);
 
   const showImage = hasImageInitially || imageBust !== null;
-  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/cover.png${
+  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/cover.webp${
     imageBust ? `?t=${imageBust}` : ""
   }`;
 
@@ -880,7 +880,7 @@ function SceneCard({
   const sceneNum = index + 1;
   const isGeneratingImage = imageFetcher.state !== "idle";
   const showImage = hasImageInitially || imageBust !== null;
-  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/scenes/${sceneNum}.png${
+  const imageUrl = `${r2PublicUrl}/picture-books/${pictureBookId}/scenes/${sceneNum}.webp${
     imageBust ? `?t=${imageBust}` : ""
   }`;
 
