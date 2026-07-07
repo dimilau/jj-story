@@ -16,6 +16,14 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
+async function convertToWebP(bytes: Uint8Array): Promise<Uint8Array> {
+  const transformed = await env.IMAGES
+    .input(new Response(bytes).body!)
+    .output({ format: "image/webp", quality: 90 });
+  const webpBuffer = await transformed.response().arrayBuffer();
+  return new Uint8Array(webpBuffer);
+}
+
 export async function generateFluxImage({
   prompt,
   width,
@@ -56,5 +64,6 @@ export async function generateFluxImage({
     },
   })) as { image: string };
 
-  return base64ToBytes(resp.image);
+  // Normalize model output to WebP before any caller stores it in R2.
+  return convertToWebP(base64ToBytes(resp.image));
 }

@@ -108,7 +108,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     sceneImageNumbers,
     coverImagePrompt,
     hasCoverImage,
-    r2PublicUrl: env.R2_PUBLIC_URL,
+    r2PublicUrl: "/images",
   };
 }
 

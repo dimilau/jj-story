@@ -18,4 +18,4 @@ secrets.json
 !.env.example
 
 # Example
-/example/
+examples
