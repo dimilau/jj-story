@@ -5,31 +5,31 @@
       "source": "cloudflare/skills",
       "sourceType": "github",
       "skillPath": "skills/cloudflare/SKILL.md",
-      "computedHash": "44858fa40396bc5a664e816aac0409fad0a8c801b5126f249bf7c29c0e188f6c"
+      "computedHash": "a1646a6a2fb7cc683de5bf8357e5d6ae02db6fd0bf771d633c1890318e25bff2"
     },
     "d1-migration": {
       "source": "jezweb/claude-skills",
       "sourceType": "github",
       "skillPath": "plugins/cloudflare/skills/d1-migration/SKILL.md",
-      "computedHash": "9269ee07fa9962fc447879306b33a7355331f2bd95de8783d812d9b388f0b6a9"
+      "computedHash": "caf6a0ccf6a65ad496d219576ebcfe6f6708d50ea502baf75b6c60766275d218"
     },
     "daisyui": {
       "source": "saadeghi/daisyui",
       "sourceType": "github",
       "skillPath": "skills/daisyui/SKILL.md",
-      "computedHash": "64b0150dfa629289f8f34734a73ecac468aa3713d03e8705709adef6858d0c4e"
+      "computedHash": "92b9228e8f5325c1d44a3aa820f2af310743307ea978bb86faff118c6864e9ea"
     },
     "react-router-framework-mode": {
       "source": "remix-run/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-router-framework-mode/SKILL.md",
-      "computedHash": "a3294459f3a5065c837929d9700fe7d35730d5051f2979090e0f715e8fea693f"
+      "computedHash": "26c5bdac2f686c47eb4c4b48b6cb52401cde1dc833e6d26408ddfb22ea83c5ca"
     },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "0dc0edeeaec2ae491ae506806517866a3f9bd48d04e0458feb37e0252862891f"
+      "computedHash": "d81caa0f86aabab65b25e302d454f23a3328760386ed9078345584c0d5c8058e"
     }
   }
 }
