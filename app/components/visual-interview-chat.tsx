@@ -2,15 +2,36 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useRevalidator } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
-import { SendIcon, SparklesIcon, CheckCircle2Icon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowUpIcon, SparklesIcon, CheckCircle2Icon } from "lucide-react";
 import { marked } from "marked";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -34,7 +55,6 @@ export default function VisualInterviewChat({
   const [error, setError] = useState<string | null>(null);
 
   const lastDataRef = useRef<InterviewResponse | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
 
   const isSending = fetcher.state !== "idle";
   const started = messages.length > 0;
@@ -57,11 +77,6 @@ export default function VisualInterviewChat({
     }
   }, [fetcher.state, fetcher.data, revalidator]);
 
-  // Auto-scroll to the latest message.
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "nearest" });
-  }, [messages, isSending]);
-
   const send = (content: string) => {
     const trimmed = content.trim();
     if (!trimmed || isSending) return;
@@ -75,80 +90,95 @@ export default function VisualInterviewChat({
     );
   };
 
-  // Empty state with prompt starter.
-  if (!started) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
-        <div className="rounded-full bg-primary/10 p-3">
-          <SparklesIcon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h4 className="text-base font-semibold">Visual Preferences Interview</h4>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The AI art director will ask a few multiple-choice questions to lock
-            in a consistent visual style, characters, props, and settings for
-            your picture book.
-          </p>
-        </div>
-        <Button
-          onClick={() => send("Let's begin the visual style interview.")}
-          disabled={isSending}
-        >
-          {isSending ? (
-            <>
-              <Spinner data-icon="inline-start" />
-              Starting...
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-4 w-4 mr-1" />
-              Start Interview
-            </>
-          )}
-        </Button>
-        {error && <p className="text-destructive text-sm">{error}</p>}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="flex flex-col gap-3 p-4">
-          {messages.map((m, i) =>
-            m.role === "user" ? (
-              <div
-                key={i}
-                className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground whitespace-pre-wrap"
-              >
-                {m.content}
-              </div>
-            ) : (
-              <div
-                key={i}
-                className="markdown-bubble max-w-[85%] self-start rounded-lg bg-muted px-3 py-2 text-sm"
-                dangerouslySetInnerHTML={{ __html: marked.parse(m.content) as string }}
-              />
-            )
-          )}
-          {isSending && (
-            <div className="self-start rounded-lg bg-muted px-3 py-2">
-              <Spinner className="h-4 w-4" />
-            </div>
-          )}
-          {done && (
-            <div className="flex items-center gap-2 self-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              <CheckCircle2Icon className="h-4 w-4" />
-              Visual details saved. The Visual &amp; Style section is now ready.
-            </div>
-          )}
-          {error && <p className="self-center text-destructive text-sm">{error}</p>}
-          <div ref={endRef} />
-        </div>
-      </ScrollArea>
+    <Card className="h-full gap-0">
+      <CardHeader className="gap-1 border-b">
+        <CardTitle>Visual Preferences Interview</CardTitle>
+        <CardDescription>
+          The AI art director asks a few multiple-choice questions to lock in a
+          consistent visual style, characters, props, and settings.
+        </CardDescription>
+      </CardHeader>
 
-      {!done && (
-        <div className="border-t p-3">
+      <CardContent className="min-h-0 flex-1 overflow-hidden p-0">
+        {!started ? (
+          <Empty className="h-full">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <SparklesIcon />
+              </EmptyMedia>
+              <EmptyTitle>Ready when you are</EmptyTitle>
+              <EmptyDescription>
+                Press start to begin the visual style interview.
+              </EmptyDescription>
+            </EmptyHeader>
+            <Button
+              onClick={() => send("Let's begin the visual style interview.")}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon className="h-4 w-4 mr-1" />
+                  Start Interview
+                </>
+              )}
+            </Button>
+            {error && <p className="text-destructive text-sm">{error}</p>}
+          </Empty>
+        ) : (
+          <MessageScrollerProvider>
+            <MessageScroller className="h-full">
+              <MessageScrollerViewport>
+                <MessageScrollerContent aria-busy={isSending} className="gap-3 p-4">
+                  {messages.map((m, i) => (
+                    <MessageScrollerItem key={i} scrollAnchor={m.role === "user"}>
+                      {m.role === "user" ? (
+                        <div className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground whitespace-pre-wrap ml-auto">
+                          {m.content}
+                        </div>
+                      ) : (
+                        <div
+                          className="markdown-bubble max-w-[85%] self-start rounded-lg bg-muted px-3 py-2 text-sm"
+                          dangerouslySetInnerHTML={{ __html: marked.parse(m.content) as string }}
+                        />
+                      )}
+                    </MessageScrollerItem>
+                  ))}
+                  {isSending && (
+                    <MessageScrollerItem>
+                      <div className="self-start rounded-lg bg-muted px-3 py-2 w-fit">
+                        <Spinner className="h-4 w-4" />
+                      </div>
+                    </MessageScrollerItem>
+                  )}
+                  {done && (
+                    <MessageScrollerItem>
+                      <div className="flex items-center gap-2 self-center mx-auto w-fit rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                        <CheckCircle2Icon className="h-4 w-4" />
+                        Visual details saved. The Visual &amp; Style section is now ready.
+                      </div>
+                    </MessageScrollerItem>
+                  )}
+                  {error && (
+                    <MessageScrollerItem>
+                      <p className="self-center text-center text-destructive text-sm">{error}</p>
+                    </MessageScrollerItem>
+                  )}
+                </MessageScrollerContent>
+              </MessageScrollerViewport>
+              <MessageScrollerButton />
+            </MessageScroller>
+          </MessageScrollerProvider>
+        )}
+      </CardContent>
+
+      {started && !done && (
+        <CardFooter className="p-3">
           <InputGroup>
             <InputGroupTextarea
               placeholder="Type your answer (e.g. 1.A, 2.B, 3.C)..."
@@ -172,12 +202,12 @@ export default function VisualInterviewChat({
                 disabled={isSending || !input.trim()}
                 aria-label="Send"
               >
-                <SendIcon className="h-4 w-4" />
+                <ArrowUpIcon className="h-4 w-4" />
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
-        </div>
+        </CardFooter>
       )}
-    </div>
+    </Card>
   );
 }

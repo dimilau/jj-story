@@ -1320,7 +1320,7 @@ export default function EditPictureBook({ loaderData }: Route.ComponentProps) {
               )}
               {scenesSection}
             </div>
-            <div className="lg:sticky lg:top-6 h-[calc(100vh-8rem)] border border-border rounded-lg overflow-hidden bg-card">
+            <div className="lg:sticky lg:top-6 h-[calc(100vh-8rem)]">
               <VisualInterviewChat pictureBookId={loaderData.pictureBook.id} />
             </div>
           </div>
