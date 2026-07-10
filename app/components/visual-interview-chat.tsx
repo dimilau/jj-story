@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useRevalidator } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -17,6 +15,9 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import { Marker, MarkerIcon, MarkerContent } from "@/components/ui/marker";
+import { Message, MessageContent } from "@/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -25,13 +26,13 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
-import { ArrowUpIcon, SparklesIcon, CheckCircle2Icon } from "lucide-react";
+  ArrowUpIcon,
+  CheckCircle2Icon,
+  Loader2Icon,
+  SparklesIcon,
+} from "lucide-react";
 import { marked } from "marked";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -90,9 +91,16 @@ export default function VisualInterviewChat({
     );
   };
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send(input);
+    }
+  }
+
   return (
-    <Card className="h-full gap-0">
-      <CardHeader className="gap-1 border-b">
+    <Card className="h-full gap-0 overflow-hidden py-0">
+      <CardHeader className="border-b py-4">
         <CardTitle>Visual Preferences Interview</CardTitle>
         <CardDescription>
           The AI art director asks a few multiple-choice questions to lock in a
@@ -100,7 +108,7 @@ export default function VisualInterviewChat({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="min-h-0 flex-1 overflow-hidden p-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         {!started ? (
           <Empty className="h-full">
             <EmptyHeader>
@@ -117,97 +125,137 @@ export default function VisualInterviewChat({
               disabled={isSending}
             >
               {isSending ? (
-                <>
-                  <Spinner data-icon="inline-start" />
-                  Starting...
-                </>
+                <Loader2Icon className="animate-spin" data-icon="inline-start" />
               ) : (
-                <>
-                  <SparklesIcon className="h-4 w-4 mr-1" />
-                  Start Interview
-                </>
+                <SparklesIcon data-icon="inline-start" />
               )}
+              {isSending ? "Starting..." : "Start Interview"}
             </Button>
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </Empty>
         ) : (
-          <MessageScrollerProvider>
-            <MessageScroller className="h-full">
-              <MessageScrollerViewport>
-                <MessageScrollerContent aria-busy={isSending} className="gap-3 p-4">
-                  {messages.map((m, i) => (
-                    <MessageScrollerItem key={i} scrollAnchor={m.role === "user"}>
-                      {m.role === "user" ? (
-                        <div className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground whitespace-pre-wrap ml-auto">
-                          {m.content}
-                        </div>
-                      ) : (
-                        <div
-                          className="markdown-bubble max-w-[85%] self-start rounded-lg bg-muted px-3 py-2 text-sm"
-                          dangerouslySetInnerHTML={{ __html: marked.parse(m.content) as string }}
-                        />
-                      )}
-                    </MessageScrollerItem>
-                  ))}
-                  {isSending && (
-                    <MessageScrollerItem>
-                      <div className="self-start rounded-lg bg-muted px-3 py-2 w-fit">
-                        <Spinner className="h-4 w-4" />
-                      </div>
-                    </MessageScrollerItem>
-                  )}
-                  {done && (
-                    <MessageScrollerItem>
-                      <div className="flex items-center gap-2 self-center mx-auto w-fit rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-                        <CheckCircle2Icon className="h-4 w-4" />
-                        Visual details saved. The Visual &amp; Style section is now ready.
-                      </div>
-                    </MessageScrollerItem>
-                  )}
-                  {error && (
-                    <MessageScrollerItem>
-                      <p className="self-center text-center text-destructive text-sm">{error}</p>
-                    </MessageScrollerItem>
-                  )}
-                </MessageScrollerContent>
-              </MessageScrollerViewport>
-              <MessageScrollerButton />
-            </MessageScroller>
-          </MessageScrollerProvider>
+          <div className="flex h-full flex-col">
+            <MessageScrollerProvider autoScroll>
+              <MessageScroller className="flex-1">
+                <MessageScrollerViewport>
+                  <MessageScrollerContent className="px-4 py-4">
+                    {messages.map((m, i) => (
+                      <MessageScrollerItem key={i} scrollAnchor={m.role === "user"}>
+                        {m.role === "user" ? (
+                          <UserMessage content={m.content} />
+                        ) : (
+                          <AssistantMessage content={m.content} />
+                        )}
+                      </MessageScrollerItem>
+                    ))}
+
+                    {isSending && (
+                      <MessageScrollerItem>
+                        <ThinkingMessage />
+                      </MessageScrollerItem>
+                    )}
+
+                    {done && (
+                      <MessageScrollerItem>
+                        <Marker>
+                          <MarkerIcon>
+                            <CheckCircle2Icon className="text-emerald-500" />
+                          </MarkerIcon>
+                          <MarkerContent>
+                            Visual details saved. The Visual &amp; Style section is
+                            now ready.
+                          </MarkerContent>
+                        </Marker>
+                      </MessageScrollerItem>
+                    )}
+
+                    {error && (
+                      <MessageScrollerItem>
+                        <p className="text-center text-sm text-destructive">
+                          {error}
+                        </p>
+                      </MessageScrollerItem>
+                    )}
+                  </MessageScrollerContent>
+                </MessageScrollerViewport>
+                <MessageScrollerButton />
+              </MessageScroller>
+            </MessageScrollerProvider>
+
+            {!done && (
+              <div className="shrink-0 bg-background px-3 py-3">
+                <div className="flex items-end gap-1 rounded-3xl bg-muted p-2">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type your answer (e.g. 1.A, 2.B, 3.C)..."
+                    disabled={isSending}
+                    rows={1}
+                    className="min-h-0 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                  />
+                  <Button
+                    size="icon"
+                    onClick={() => send(input)}
+                    disabled={isSending || !input.trim()}
+                    className="shrink-0 rounded-full"
+                  >
+                    {isSending ? (
+                      <Loader2Icon className="animate-spin" data-icon="inline" />
+                    ) : (
+                      <ArrowUpIcon data-icon="inline" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
-
-      {started && !done && (
-        <CardFooter className="p-3">
-          <InputGroup>
-            <InputGroupTextarea
-              placeholder="Type your answer (e.g. 1.A, 2.B, 3.C)..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send(input);
-                }
-              }}
-              disabled={isSending}
-              rows={2}
-            />
-            <InputGroupAddon align="block-end">
-              <InputGroupButton
-                className="ml-auto"
-                variant="default"
-                size="icon-xs"
-                onClick={() => send(input)}
-                disabled={isSending || !input.trim()}
-                aria-label="Send"
-              >
-                <ArrowUpIcon className="h-4 w-4" />
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
-        </CardFooter>
-      )}
     </Card>
+  );
+}
+
+function UserMessage({ content }: { content: string }) {
+  return (
+    <Message align="end">
+      <MessageContent>
+        <Bubble align="end" variant="muted" className="rounded-2xl">
+          <BubbleContent className="whitespace-pre-wrap text-foreground">
+            {content}
+          </BubbleContent>
+        </Bubble>
+      </MessageContent>
+    </Message>
+  );
+}
+
+function AssistantMessage({ content }: { content: string }) {
+  return (
+    <Message align="start">
+      <MessageContent>
+        <Bubble variant="ghost">
+          <BubbleContent
+            className="markdown-bubble"
+            dangerouslySetInnerHTML={{ __html: marked.parse(content) as string }}
+          />
+        </Bubble>
+      </MessageContent>
+    </Message>
+  );
+}
+
+function ThinkingMessage() {
+  return (
+    <Message align="start">
+      <MessageContent>
+        <Bubble variant="ghost">
+          <BubbleContent className="flex items-center gap-2 text-muted-foreground">
+            <Loader2Icon className="size-3.5 animate-spin" />
+            <span>Thinking...</span>
+          </BubbleContent>
+        </Bubble>
+      </MessageContent>
+    </Message>
   );
 }
