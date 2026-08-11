@@ -77,3 +77,5 @@ Note: Worker doesn't need to exist for local development, but it is required for
 * Build and deploy directly to production: `pnpm run deploy`
 * Deploy a preview URL: `pnpm wrangler versions upload`
 * Promote a version to production after verification or roll it out progressively: `pnpm wrangler versions deploy`
+
+Test
